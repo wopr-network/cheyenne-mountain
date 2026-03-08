@@ -1,6 +1,7 @@
 FROM node:24-alpine
 RUN npm install -g @wopr-network/radar@latest @anthropic-ai/claude-code @anthropic-ai/claude-agent-sdk
-RUN apk add --no-cache git
+RUN apk add --no-cache git sudo
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 RUN mkdir -p /data && chown node:node /data
 ENV CLI=/usr/local/lib/node_modules/@wopr-network/radar/dist/cli/index.js
 WORKDIR /app
