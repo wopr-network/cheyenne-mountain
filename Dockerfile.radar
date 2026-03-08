@@ -1,0 +1,8 @@
+FROM node:24-alpine
+RUN npm install -g @wopr-network/radar@latest @anthropic-ai/claude-code @anthropic-ai/claude-agent-sdk
+RUN apk add --no-cache git
+RUN mkdir -p /data && chown node:node /data
+ENV CLI=/usr/local/lib/node_modules/@wopr-network/radar/dist/cli/index.js
+WORKDIR /app
+USER node
+CMD ["sh", "-c", "mkdir -p /home/node/.claude && cp /claude-host/.credentials.json /home/node/.claude/.credentials.json 2>/dev/null || true && node $CLI seed /app/seed/radar.json --defcon-url $DEFCON_URL --db $RADAR_DB_PATH && node $CLI run --workers 4 --role engineering --defcon-url $DEFCON_URL --seed /app/seed/radar.json ${DUMMY_MODE:+--dummy}"]

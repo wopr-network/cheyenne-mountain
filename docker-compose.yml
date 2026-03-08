@@ -1,0 +1,82 @@
+services:
+  defcon:
+    build:
+      context: .
+      dockerfile: Dockerfile.defcon
+    container_name: defcon
+    volumes:
+      - defcon-data:/data
+      - ./seed:/app/seed:ro
+    environment:
+      DEFCON_DB_PATH: /data/defcon.db
+      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
+      DEFCON_WORKER_TOKEN: ${DEFCON_WORKER_TOKEN}
+      DEFCON_SEED_ROOT: /
+      DEFCON_CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://battleaxe:3000
+      DUMMY_MODE: ${DUMMY_MODE:-}
+    ports:
+      - "3001:3001"
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/status"]
+      interval: 5s
+      retries: 10
+      start_period: 15s
+
+  radar:
+    build:
+      context: .
+      dockerfile: Dockerfile.radar
+    container_name: radar
+    volumes:
+      - radar-data:/data
+      - ./seed:/app/seed:ro
+      - ~/.claude:/claude-host:ro
+      - ~/radar/dist:/usr/local/lib/node_modules/@wopr-network/radar/dist:ro
+    environment:
+      RADAR_DB_PATH: /data/radar.db
+      DEFCON_URL: http://defcon:3001
+      DEFCON_WORKER_TOKEN: ${DEFCON_WORKER_TOKEN}
+      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
+      LINEAR_API_KEY: ${LINEAR_API_KEY}
+      DUMMY_MODE: ${DUMMY_MODE:-}
+    ports:
+      - "8080:8080"
+    networks:
+      - pipeline
+    depends_on:
+      defcon:
+        condition: service_healthy
+
+  norad:
+    build:
+      context: ~/norad-feat
+      dockerfile: /home/tsavo/test-defcon-radar/Dockerfile.norad
+      args:
+        NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
+        NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}
+    container_name: norad
+    environment:
+      DEFCON_URL: http://defcon:3001
+      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
+      RADAR_URL: http://radar:8080
+      NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
+      NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}
+    ports:
+      - "3000:3000"
+    networks:
+      - pipeline
+    depends_on:
+      defcon:
+        condition: service_healthy
+      radar:
+        condition: service_started
+
+networks:
+  pipeline:
+    driver: bridge
+
+volumes:
+  defcon-data:
+  radar-data:

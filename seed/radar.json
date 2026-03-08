@@ -1,0 +1,47 @@
+{
+  "flows": [
+    {
+      "name": "wopr-changeset",
+      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge.",
+      "initialState": "architecting",
+      "maxConcurrent": 4,
+      "maxConcurrentPerRepo": 4,
+      "states": [
+        { "name": "backlog", "mode": "passive" },
+        { "name": "architecting", "modelTier": "opus", "mode": "active" },
+        { "name": "coding", "modelTier": "sonnet", "mode": "active" },
+        { "name": "reviewing", "modelTier": "sonnet", "mode": "active" },
+        { "name": "fixing", "modelTier": "sonnet", "mode": "active" },
+        { "name": "merging", "modelTier": "haiku", "mode": "active" },
+        { "name": "done", "mode": "passive" }
+      ],
+      "transitions": [
+        { "fromState": "backlog", "toState": "architecting", "trigger": "start" },
+        { "fromState": "architecting", "toState": "coding", "trigger": "spec_ready" },
+        { "fromState": "coding", "toState": "reviewing", "trigger": "pr_created" },
+        { "fromState": "reviewing", "toState": "merging", "trigger": "clean" },
+        { "fromState": "reviewing", "toState": "fixing", "trigger": "issues" },
+        { "fromState": "fixing", "toState": "reviewing", "trigger": "fixes_pushed" },
+        { "fromState": "merging", "toState": "done", "trigger": "merged" }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "linear-main",
+      "type": "linear",
+      "token": "$LINEAR_API_KEY",
+      "config": {
+        "teamId": "WOPR"
+      }
+    }
+  ],
+  "watches": [
+    {
+      "id": "linear-started-to-architect",
+      "sourceId": "linear-main",
+      "event": "issue.started",
+      "flowName": "wopr-changeset"
+    }
+  ]
+}

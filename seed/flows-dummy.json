@@ -1,0 +1,141 @@
+{
+  "flows": [
+    {
+      "name": "wopr-changeset",
+      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge. Replaces the hand-coded /wopr:auto skill.",
+      "discipline": "engineering",
+      "initialState": "architecting",
+      "maxConcurrent": 4,
+      "maxConcurrentPerRepo": 4,
+      "createdBy": "seed:wopr-changeset"
+    }
+  ],
+  "states": [
+    {
+      "name": "backlog",
+      "flowName": "wopr-changeset",
+      "mode": "passive"
+    },
+    {
+      "name": "architecting",
+      "flowName": "wopr-changeset",
+      "modelTier": "opus",
+      "mode": "active",
+      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+    },
+    {
+      "name": "coding",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+    },
+    {
+      "name": "reviewing",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+    },
+    {
+      "name": "fixing",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+    },
+    {
+      "name": "merging",
+      "flowName": "wopr-changeset",
+      "modelTier": "haiku",
+      "mode": "active",
+      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+    },
+    {
+      "name": "stuck",
+      "flowName": "wopr-changeset",
+      "mode": "passive",
+      "constraints": {
+        "description": "Issue has been flagged 3+ times for the same finding. Requires human intervention."
+      }
+    },
+    {
+      "name": "done",
+      "flowName": "wopr-changeset",
+      "mode": "passive"
+    }
+  ],
+  "gates": [],
+  "transitions": [
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "backlog",
+      "toState": "architecting",
+      "trigger": "start",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "architecting",
+      "toState": "coding",
+      "trigger": "spec_ready",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "coding",
+      "toState": "reviewing",
+      "trigger": "pr_created",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "reviewing",
+      "toState": "merging",
+      "trigger": "clean",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "reviewing",
+      "toState": "fixing",
+      "trigger": "issues",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "fixing",
+      "toState": "reviewing",
+      "trigger": "fixes_pushed",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "fixing",
+      "toState": "stuck",
+      "trigger": "cant_resolve",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "merging",
+      "toState": "done",
+      "trigger": "merged",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "merging",
+      "toState": "reviewing",
+      "trigger": "blocked",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "merging",
+      "toState": "stuck",
+      "trigger": "closed",
+      "priority": 2
+    }
+  ]
+}
