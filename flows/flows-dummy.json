@@ -2,7 +2,7 @@
   "flows": [
     {
       "name": "wopr-changeset",
-      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge. Replaces the hand-coded /wopr:auto skill.",
+      "description": "Minimal scaffold of the wopr-changeset flow for testing — no gates, no onEnter hooks, stub prompts. Not loaded by defcon (lives in flows/ for reference only).",
       "discipline": "engineering",
       "initialState": "architecting",
       "maxConcurrent": 4,

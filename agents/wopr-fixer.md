@@ -24,7 +24,7 @@ Address every finding under **Reviewer Findings** in your assignment. For each:
 
 ### Step 3: Run the gate
 ```bash
-pnpm lint && pnpm format && pnpm build && pnpm protocol:gen 2>/dev/null || true
+pnpm lint && pnpm format && pnpm build && (pnpm protocol:gen 2>/dev/null || true)
 ```
 
 ### Step 4: Reply to the Linear comment for each finding you fixed

@@ -30,7 +30,7 @@
       "modelTier": "sonnet",
       "mode": "active",
       "onEnter": {
-        "command": "node /app/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
         "artifacts": ["prComments", "prDiff"]
       },
       "promptTemplate": "You are a code reviewer for a hotfix PR. This is a fast-track fix — be thorough but focused. Check for correctness, test coverage, and no regressions.\n\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n\n{{entity.artifacts.prComments}}\n\n## Diff\n\n{{entity.artifacts.prDiff}}\n\n## Signal\n\nSay `CLEAN: {{entity.artifacts.prUrl}}` if no blocking issues.\nSay `ISSUES: {{entity.artifacts.prUrl}} — <semicolon-separated findings>` if issues found."
@@ -42,7 +42,7 @@
       "modelTier": "sonnet",
       "mode": "active",
       "onEnter": {
-        "command": "node /app/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
         "artifacts": ["prComments"]
       },
       "promptTemplate": "Fix the reviewer findings for this hotfix PR.\n\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Reviewer Findings\n\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n\n{{entity.artifacts.prComments}}\n\nFix each finding. Run `pnpm lint && pnpm format && pnpm build`. Push.\n\nSay `Fixes pushed: {{entity.artifacts.prUrl}}` when done."

@@ -14,7 +14,7 @@ gh pr checks "${PR_NUMBER}" --repo "${REPO}" --watch --interval 15 2>/dev/null |
 
 # Check if CI actually passed
 FAILED=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,status,conclusion \
-  --jq '[.[] | select(.conclusion == "FAILURE")] | length' 2>/dev/null || echo "0")
+  --jq '[.[] | select(.conclusion | ascii_downcase == "failure")] | length' 2>/dev/null || echo "0")
 
 if [ "${FAILED}" -gt "0" ]; then
   echo "CI failed: ${FAILED} check(s) failing on PR #${PR_NUMBER}"
@@ -44,5 +44,6 @@ while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
   sleep 30
 done
 
-echo "Timed out waiting for review bots on PR #${PR_NUMBER}. Proceeding anyway."
+echo "WARN: Timed out waiting for review bots on PR #${PR_NUMBER}. Proceeding with 0 bot comments." >&2
+echo "Proceeding without bot comments — reviewer will work with diff only."
 exit 0

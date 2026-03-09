@@ -22,7 +22,12 @@ ATTEMPTS=0
 while [ "$ATTEMPTS" -lt 30 ]; do
   STATUS=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
     --json state,mergeStateStatus \
-    --jq '"state=" + .state + " merge=" + .mergeStateStatus')
+    --jq '"state=" + .state + " merge=" + .mergeStateStatus' 2>/dev/null) || {
+    echo "WARN: gh pr view failed, retrying..." >&2
+    ATTEMPTS=$((ATTEMPTS + 1))
+    sleep 30
+    continue
+  }
 
   case "$STATUS" in
     *state=MERGED*)
@@ -43,5 +48,5 @@ while [ "$ATTEMPTS" -lt 30 ]; do
   sleep 30
 done
 
-echo '{"outcome":"blocked","message":"Timed out waiting for PR #'"$PR_NUMBER"' after 15 minutes. Last status: '"$STATUS"'"}'
+echo '{"outcome":"blocked","message":"Timed out waiting for PR #'"$PR_NUMBER"' after 15 minutes. Last status: '"${STATUS:-unknown}"'"}'
 exit 1

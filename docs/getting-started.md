@@ -2,20 +2,27 @@
 
 The SILO is the reference implementation of the agentic engineering pipeline. It contains everything needed to run DEFCON + RADAR + NORAD as a complete automated software delivery system.
 
-> **The SILO is what you fork.** You don't fork DEFCON (that's the engine). You don't fork RADAR (that's the dispatcher). You fork the SILO — the payload — and customize it for your project.
+> **The SILO and NUKE are what you fork.** You don't fork DEFCON (that's the engine). You don't fork RADAR (that's the dispatcher). You fork the SILO (flow definitions, gates, agents) and the NUKE (agent containers) and customize them for your project.
 
 ---
 
 ## What's Inside
 
 ```
-flows/          — Flow definitions (state machines, prompts, gates, transitions)
-gates/          — Gate scripts (deterministic shell checks)
-scripts/        — onEnter hooks (context assembly)
-agents/         — Agent role files (behavioral contracts)
-docker-compose.yml  — Full stack: DEFCON + RADAR + NORAD
-validate.sh     — Check flow integrity before running
+seed/                 — Everything DEFCON seeds on startup (mounted at /app/seed)
+  flows.json          — The production flow definition (states, prompts, gates, transitions)
+  flows-dummy.json    — Minimal scaffold for testing (no gates/onEnter)
+  radar.json          — RADAR configuration (sources, watches)
+  gates/              — Gate scripts (deterministic shell checks)
+  scripts/            — onEnter hooks (context assembly)
+
+flows/                — Reference copies for browsing (not mounted into containers)
+agents/               — Agent role files (behavioral contracts)
+docker-compose.yml    — Full stack: DEFCON + RADAR + NORAD
+validate.sh           — Check flow integrity before running
 ```
+
+> **Note:** The `seed/` directory is what DEFCON actually loads at startup. The top-level `flows/`, `gates/`, `scripts/`, and `agents/` directories are reference copies for browsing and validation. When customizing flows, edit the files in `seed/` — those are what the running stack uses.
 
 ### Flows
 
@@ -152,9 +159,27 @@ See `scripts/fetch-spec.js` for an example.
 
 ---
 
+## The NUKE — Agent Containers
+
+The SILO defines WHAT happens (flows, gates, prompts). The [NUKE](https://github.com/wopr-network/nuke) defines HOW agents run — the Docker containers that execute each invocation.
+
+The NUKE repo contains:
+- `packages/worker-runtime/` — HTTP server that receives dispatch requests from RADAR, streams SSE events back, and parses signals from agent output
+- `workers/coder/Dockerfile` — container for the coder discipline (git, gh CLI, pnpm)
+- `workers/devops/Dockerfile` — container for the devops discipline (git, curl)
+
+Each discipline gets its own Dockerfile with project-specific tooling. A Python shop adds `pip`, `pytest`, `ruff`. A Rust shop adds `cargo`, `clippy`. The runtime is shared — the tooling is yours.
+
+RADAR POSTs `{prompt, modelTier}` to the nuke's `/dispatch` endpoint. The nuke streams back SSE events: `session`, `tool_use`, `text`, and finally `result` with the parsed signal and artifacts. The nuke dies after each invocation.
+
+**Fork the NUKE** to customize what's installed in your agent containers.
+
+---
+
 ## Cross-References
 
 - [DEFCON](https://github.com/wopr-network/defcon) — the state machine engine
 - [RADAR](https://github.com/wopr-network/radar) — detection and dispatch
+- [NUKE](https://github.com/wopr-network/nuke) — agent containers
 - [NORAD](https://github.com/wopr-network/norad) — the command center dashboard
 - [The Thesis](https://github.com/wopr-network/defcon/blob/main/docs/method/manifesto/the-thesis.md) — why this exists

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # validate.sh — Check flow definition integrity before running.
 # Verifies that all referenced gates, scripts, and agent roles exist.
 
@@ -38,14 +38,14 @@ for FLOW_FILE in flows/*.json; do
     });
   " 2>/dev/null)
 
-  echo "$GATE_COMMANDS" | while IFS='|' read -r GATE_NAME SCRIPT; do
+  while IFS='|' read -r GATE_NAME SCRIPT; do
     [ -z "$GATE_NAME" ] && continue
     if [ -f "$SCRIPT" ]; then
       ok "gate '$GATE_NAME' → $SCRIPT exists"
     else
       err "gate '$GATE_NAME' references $SCRIPT but file not found"
     fi
-  done
+  done <<< "$GATE_COMMANDS"
 
   # Extract agent roles and check .md files exist
   ROLES=$(node -e "
@@ -55,34 +55,43 @@ for FLOW_FILE in flows/*.json; do
     });
   " 2>/dev/null)
 
-  echo "$ROLES" | while IFS='|' read -r STATE_NAME ROLE; do
+  while IFS='|' read -r STATE_NAME ROLE; do
     [ -z "$ROLE" ] && continue
     if [ -f "agents/$ROLE.md" ]; then
       ok "state '$STATE_NAME' agent '$ROLE' → agents/$ROLE.md exists"
     else
       warn "state '$STATE_NAME' agent '$ROLE' → agents/$ROLE.md not found (will use ~/.claude/agents/)"
     fi
-  done
+  done <<< "$ROLES"
 
   # Check transitions reference valid states
-  node -e "
+  TRANSITION_ERRORS=$(node -e "
     const f = JSON.parse(require('fs').readFileSync('$FLOW_FILE','utf8'));
     const stateNames = new Set((f.states || []).map(s => s.name));
     const gateNames = new Set((f.gates || []).map(g => g.name));
+    let errors = 0;
     (f.transitions || []).forEach(t => {
-      if (!stateNames.has(t.fromState)) console.log('ERROR: transition from unknown state: ' + t.fromState);
-      if (!stateNames.has(t.toState)) console.log('ERROR: transition to unknown state: ' + t.toState);
-      if (t.gateName && !gateNames.has(t.gateName)) console.log('ERROR: transition references unknown gate: ' + t.gateName);
+      if (!stateNames.has(t.fromState)) { console.error('ERROR: transition from unknown state: ' + t.fromState); errors++; }
+      if (!stateNames.has(t.toState)) { console.error('ERROR: transition to unknown state: ' + t.toState); errors++; }
+      if (t.gateName && !gateNames.has(t.gateName)) { console.error('ERROR: transition references unknown gate: ' + t.gateName); errors++; }
     });
     // Check outcome toState references
     (f.gates || []).forEach(g => {
       if (g.outcomes) {
         Object.entries(g.outcomes).forEach(([name, o]) => {
-          if (o.toState && !stateNames.has(o.toState)) console.log('ERROR: gate ' + g.name + ' outcome ' + name + ' references unknown state: ' + o.toState);
+          if (o.toState && !stateNames.has(o.toState)) { console.error('ERROR: gate ' + g.name + ' outcome ' + name + ' references unknown state: ' + o.toState); errors++; }
         });
       }
     });
-  " 2>/dev/null
+    console.log(errors);
+  " 2>&1)
+
+  # Last line is the error count, preceding lines are error messages
+  TRANSITION_ERROR_COUNT=$(echo "$TRANSITION_ERRORS" | tail -1)
+  if [ "$TRANSITION_ERROR_COUNT" -gt 0 ] 2>/dev/null; then
+    echo "$TRANSITION_ERRORS" | head -n -1
+    ERRORS=$((ERRORS + TRANSITION_ERROR_COUNT))
+  fi
 
   echo ""
 done
