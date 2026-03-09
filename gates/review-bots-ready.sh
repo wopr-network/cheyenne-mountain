@@ -25,13 +25,22 @@ fi
 echo "Waiting for review bots on PR #${PR_NUMBER}..." >&2
 DEADLINE=$(( $(date +%s) + 600 ))
 
+# Get latest push timestamp to filter out stale bot comments from prior reviews
+LAST_PUSH=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.updated_at' 2>/dev/null || echo "")
+
 while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
+  if [ -n "${LAST_PUSH}" ]; then
+    SINCE_FILTER="select(.created_at >= \"${LAST_PUSH}\") |"
+  else
+    SINCE_FILTER=""
+  fi
+
   BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
-    --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
+    --jq '[.[] | '"${SINCE_FILTER}"' select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
     2>/dev/null || echo "0")
 
   TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-    --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
+    --jq '[.[] | '"${SINCE_FILTER}"' select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
     2>/dev/null || echo "0")
 
   TOTAL=$(( BOT_COUNT + TOP_COUNT ))

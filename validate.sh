@@ -21,7 +21,7 @@ for FLOW_FILE in flows/*.json; do
   echo "--- Flow: $FLOW_NAME ($FLOW_FILE) ---"
 
   # Validate JSON syntax
-  if ! node -e "JSON.parse(require('fs').readFileSync('$FLOW_FILE','utf8'))" 2>/dev/null; then
+  if ! node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'))" "$FLOW_FILE" 2>/dev/null; then
     err "$FLOW_FILE: invalid JSON"
     continue
   fi
@@ -29,14 +29,14 @@ for FLOW_FILE in flows/*.json; do
 
   # Extract gate commands and check scripts exist
   GATE_COMMANDS=$(node -e "
-    const f = JSON.parse(require('fs').readFileSync('$FLOW_FILE','utf8'));
+    const f = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
     (f.gates || []).forEach(g => {
       if (g.command) {
         const script = g.command.split(' ')[0];
         console.log(g.name + '|' + script);
       }
     });
-  " 2>/dev/null)
+  " "$FLOW_FILE" 2>/dev/null)
 
   while IFS='|' read -r GATE_NAME SCRIPT; do
     [ -z "$GATE_NAME" ] && continue
@@ -49,11 +49,11 @@ for FLOW_FILE in flows/*.json; do
 
   # Extract agent roles and check .md files exist
   ROLES=$(node -e "
-    const f = JSON.parse(require('fs').readFileSync('$FLOW_FILE','utf8'));
+    const f = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
     (f.states || []).forEach(s => {
       if (s.agentRole) console.log(s.name + '|' + s.agentRole);
     });
-  " 2>/dev/null)
+  " "$FLOW_FILE" 2>/dev/null)
 
   while IFS='|' read -r STATE_NAME ROLE; do
     [ -z "$ROLE" ] && continue
@@ -66,7 +66,7 @@ for FLOW_FILE in flows/*.json; do
 
   # Check transitions reference valid states
   TRANSITION_ERRORS=$(node -e "
-    const f = JSON.parse(require('fs').readFileSync('$FLOW_FILE','utf8'));
+    const f = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
     const stateNames = new Set((f.states || []).map(s => s.name));
     const gateNames = new Set((f.gates || []).map(g => g.name));
     let errors = 0;
@@ -84,12 +84,13 @@ for FLOW_FILE in flows/*.json; do
       }
     });
     console.log(errors);
-  " 2>&1)
+  " "$FLOW_FILE" 2>&1)
 
   # Last line is the error count, preceding lines are error messages
   TRANSITION_ERROR_COUNT=$(echo "$TRANSITION_ERRORS" | tail -1)
   if [ "$TRANSITION_ERROR_COUNT" -gt 0 ] 2>/dev/null; then
-    echo "$TRANSITION_ERRORS" | head -n -1
+    # Use sed instead of GNU-only head -n -1 for portability
+    echo "$TRANSITION_ERRORS" | sed '$d'
     ERRORS=$((ERRORS + TRANSITION_ERROR_COUNT))
   fi
 

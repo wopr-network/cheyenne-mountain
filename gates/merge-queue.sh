@@ -39,8 +39,8 @@ while [ "$ATTEMPTS" -lt 30 ]; do
       exit 1
       ;;
     *merge=BLOCKED*)
-      echo '{"outcome":"blocked","message":"PR #'"$PR_NUMBER"' is blocked in merge queue: '"$STATUS"'"}'
-      exit 1
+      # BLOCKED is often transient (waiting for required checks). Keep polling.
+      echo "PR #${PR_NUMBER} is BLOCKED (likely waiting for checks), continuing to poll..." >&2
       ;;
   esac
 
