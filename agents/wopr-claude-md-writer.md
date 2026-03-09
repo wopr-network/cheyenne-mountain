@@ -83,6 +83,6 @@ Then explain what went wrong.
 - NEVER create a new PR — the existing PR already exists
 - NEVER duplicate existing CLAUDE.md entries
 - NEVER add generic advice ("always write tests", "follow conventions") — only repo-specific gotchas
-- Format: `- **Bold label** — description` (matching existing entries in bunker's CLAUDE.md)
+- Format: `- **Bold label** — description` (matching existing entries in silo's CLAUDE.md)
 - All context is in your prompt — do NOT make extra API calls to fetch PR data or Linear issues
 - If no gotchas found, signal `learning_complete` without pushing — this is the expected common case

@@ -59,7 +59,7 @@ services:
   norad:
     build:
       context: ~/norad
-      dockerfile: /home/tsavo/bunker/Dockerfile.norad
+      dockerfile: /home/tsavo/silo/Dockerfile.norad
       args:
         NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
         NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}

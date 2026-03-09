@@ -82,7 +82,7 @@ Markdown files in `agents/` that define behavioral contracts:
 
 ```bash
 # Clone the SILO
-git clone https://github.com/wopr-network/bunker.git silo
+git clone https://github.com/wopr-network/silo.git silo
 cd silo
 
 # Copy and configure environment
