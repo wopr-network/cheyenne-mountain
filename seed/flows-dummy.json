@@ -58,6 +58,10 @@
       "agentRole": "wopr-technical-writer",
       "modelTier": "sonnet",
       "mode": "active",
+      "onEnter": {
+        "command": "sh /app/seed/scripts/rebase-worktree.sh {{entity.artifacts.worktreePath}}",
+        "artifacts": ["worktreeReady"]
+      },
       "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## PR Diff\n{{entity.artifacts.prDiff}}\n\n## PR Comments (review context)\n{{entity.artifacts.prComments}}"
     },
     {
