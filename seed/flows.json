@@ -38,7 +38,11 @@
       "agentRole": "wopr-coder",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
+      "onEnter": {
+        "command": "node /app/seed/scripts/fetch-spec.js {{entity.refs.linear.id}}",
+        "artifacts": ["architectSpec"]
+      },
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
     },
     {
       "name": "reviewing",
@@ -46,7 +50,11 @@
       "agentRole": "wopr-reviewer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
+      "onEnter": {
+        "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "artifacts": ["prComments", "prDiff"]
+      },
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}"
     },
     {
       "name": "fixing",
@@ -54,15 +62,11 @@
       "agentRole": "wopr-fixer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
-    },
-    {
-      "name": "merging",
-      "flowName": "wopr-changeset",
-      "agentRole": "wopr-watcher",
-      "modelTier": "haiku",
-      "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}"
+      "onEnter": {
+        "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "artifacts": ["prComments"]
+      },
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}"
     },
     {
       "name": "stuck",
@@ -88,28 +92,23 @@
       "timeoutPrompt": "Timed out checking for architect spec on {{entity.artifacts.refs.linear.key}}. The Linear API may be slow or unreachable. Retry the spec_ready signal."
     },
     {
-      "name": "ci-green",
-      "type": "command",
-      "command": "gates/ci-green.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
-      "timeoutMs": 1200000,
-      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed. Fix the failures in the worktree, push, and re-signal pr_created.",
-      "timeoutPrompt": "CI checks did not complete within 20 minutes for PR #{{entity.artifacts.prNumber}}. This usually means a check is stuck. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to identify the hung check. Consider re-triggering CI with an empty commit: `git commit --allow-empty -m 'ci: trigger re-run' && git push`."
-    },
-    {
       "name": "review-bots-ready",
       "type": "command",
       "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
-      "timeoutMs": 600000,
-      "failurePrompt": "Review bots (Qodo, CodeFactor) have not posted on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check that the PR is not a draft and that the bots are enabled for this repo. Re-signal clean once bots have posted.",
-      "timeoutPrompt": "Timed out waiting for review bots on PR #{{entity.artifacts.prNumber}} after 10 minutes. The bots may be down or the repo may not have them configured. Proceed to manual review if bots are non-essential for this repo."
+      "timeoutMs": 1800000,
+      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed. Fix the failures in the worktree, push, and re-signal pr_created.",
+      "timeoutPrompt": "CI or review bots did not complete within 30 minutes for PR #{{entity.artifacts.prNumber}}. Check CI status and whether bots are configured for this repo. Re-signal pr_created to retry."
     },
     {
       "name": "merge-queue",
       "type": "command",
       "command": "gates/merge-queue.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
       "timeoutMs": 1800000,
-      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, rebase on main and force-push. If CI failed in queue, check the failing checks and fix.",
-      "timeoutPrompt": "PR #{{entity.artifacts.prNumber}} has been in the merge queue for over 30 minutes in {{entity.refs.github.repo}}. Poll status with `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json state,mergeStateStatus` — the wopr-pr-watch.sh script may have exited on UNSTABLE without reporting."
+      "outcomes": {
+        "merged":  { "proceed": true },
+        "blocked": { "toState": "fixing" },
+        "closed":  { "toState": "stuck" }
+      }
     }
   ],
   "transitions": [
@@ -133,15 +132,15 @@
       "fromState": "coding",
       "toState": "reviewing",
       "trigger": "pr_created",
-      "gateName": "ci-green",
+      "gateName": "review-bots-ready",
       "priority": 0
     },
     {
       "flowName": "wopr-changeset",
       "fromState": "reviewing",
-      "toState": "merging",
+      "toState": "done",
       "trigger": "clean",
-      "gateName": "review-bots-ready",
+      "gateName": "merge-queue",
       "priority": 0
     },
     {
@@ -164,28 +163,6 @@
       "toState": "stuck",
       "trigger": "cant_resolve",
       "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "merging",
-      "toState": "done",
-      "trigger": "merged",
-      "gateName": "merge-queue",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "merging",
-      "toState": "reviewing",
-      "trigger": "blocked",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "merging",
-      "toState": "stuck",
-      "trigger": "closed",
-      "priority": 2
     }
   ]
 }
