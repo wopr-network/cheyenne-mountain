@@ -2,7 +2,7 @@
   "flows": [
     {
       "name": "wopr-changeset",
-      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge. Replaces the hand-coded /wopr:auto skill.",
+      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> document -> learn -> merge. Dummy version with minimal prompts for testing.",
       "discipline": "engineering",
       "initialState": "architecting",
       "maxConcurrent": 4,
@@ -19,34 +19,50 @@
     {
       "name": "architecting",
       "flowName": "wopr-changeset",
+      "agentRole": "wopr-architect",
       "modelTier": "opus",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}",
-      "agentRole": "wopr-architect"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}"
     },
     {
       "name": "coding",
       "flowName": "wopr-changeset",
+      "agentRole": "wopr-coder",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures \u2014 Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
-      "agentRole": "wopr-coder"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures \u2014 Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
     },
     {
       "name": "reviewing",
       "flowName": "wopr-changeset",
+      "agentRole": "wopr-reviewer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nA previous agent worked on this entity before this review cycle. Here is what they did:\n\n{{entity.artifacts.activityHistory}}\n{{/if}}",
-      "agentRole": "wopr-reviewer"
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nA previous agent worked on this entity before this review cycle. Here is what they did:\n\n{{entity.artifacts.activityHistory}}\n{{/if}}"
     },
     {
       "name": "fixing",
       "flowName": "wopr-changeset",
+      "agentRole": "wopr-fixer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nThe following is a log of what previous agents tried when working on this entity. Use this to avoid repeating failed approaches.\n\n{{entity.artifacts.activityHistory}}\n{{/if}}",
-      "agentRole": "wopr-fixer"
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nThe following is a log of what previous agents tried when working on this entity. Use this to avoid repeating failed approaches.\n\n{{entity.artifacts.activityHistory}}\n{{/if}}"
+    },
+    {
+      "name": "documenting",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-technical-writer",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## PR Diff\n{{entity.artifacts.prDiff}}\n\n## PR Comments (review context)\n{{entity.artifacts.prComments}}"
+    },
+    {
+      "name": "learning",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-claude-md-writer",
+      "modelTier": "haiku",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## PR Diff\n{{entity.artifacts.prDiff}}\n\n## PR Comments (review context)\n{{entity.artifacts.prComments}}"
     },
     {
       "name": "stuck",
@@ -88,9 +104,37 @@
     {
       "flowName": "wopr-changeset",
       "fromState": "reviewing",
-      "toState": "done",
+      "toState": "documenting",
       "trigger": "clean",
       "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "documenting",
+      "toState": "learning",
+      "trigger": "docs_ready",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "documenting",
+      "toState": "stuck",
+      "trigger": "cant_document",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "learning",
+      "toState": "done",
+      "trigger": "learning_complete",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "learning",
+      "toState": "stuck",
+      "trigger": "cant_learn",
+      "priority": 1
     },
     {
       "flowName": "wopr-changeset",
