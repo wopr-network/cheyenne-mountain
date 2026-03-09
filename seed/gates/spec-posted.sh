@@ -14,8 +14,8 @@ if [ -z "${LINEAR_API_KEY:-}" ]; then
   exit 1
 fi
 
-# Validate ISSUE_ID format before use (must be alphanumeric with hyphens, e.g. WOP-1234)
-if ! echo "$ISSUE_ID" | grep -qE '^[A-Z]+-[0-9]+$'; then
+# Validate ISSUE_ID format before use (Linear key e.g. WOP-1234, or UUID)
+if ! echo "$ISSUE_ID" | grep -qE '^[A-Za-z0-9-]+$'; then
   echo "ERROR: Invalid ISSUE_ID format: $ISSUE_ID" >&2
   exit 1
 fi
