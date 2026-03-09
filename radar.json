@@ -1,0 +1,55 @@
+{
+  "flows": [
+    {
+      "name": "wopr-changeset",
+      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> document -> learn -> merge.",
+      "discipline": "engineering",
+      "initialState": "architecting",
+      "maxConcurrent": 4,
+      "maxConcurrentPerRepo": 4,
+      "claimRetryAfterMs": 30000,
+      "states": [
+        { "name": "backlog", "mode": "passive" },
+        { "name": "architecting", "modelTier": "opus", "mode": "active" },
+        { "name": "coding", "modelTier": "sonnet", "mode": "active" },
+        { "name": "reviewing", "modelTier": "sonnet", "mode": "active" },
+        { "name": "fixing", "modelTier": "sonnet", "mode": "active" },
+        { "name": "documenting", "modelTier": "sonnet", "mode": "active" },
+        { "name": "learning", "modelTier": "haiku", "mode": "active" },
+        { "name": "stuck", "mode": "passive" },
+        { "name": "done", "mode": "passive" }
+      ],
+      "transitions": [
+        { "fromState": "backlog", "toState": "architecting", "trigger": "start" },
+        { "fromState": "architecting", "toState": "coding", "trigger": "spec_ready" },
+        { "fromState": "coding", "toState": "reviewing", "trigger": "pr_created" },
+        { "fromState": "reviewing", "toState": "documenting", "trigger": "clean" },
+        { "fromState": "reviewing", "toState": "fixing", "trigger": "issues" },
+        { "fromState": "fixing", "toState": "reviewing", "trigger": "fixes_pushed" },
+        { "fromState": "fixing", "toState": "stuck", "trigger": "cant_resolve" },
+        { "fromState": "documenting", "toState": "learning", "trigger": "docs_ready" },
+        { "fromState": "documenting", "toState": "stuck", "trigger": "cant_document" },
+        { "fromState": "learning", "toState": "done", "trigger": "learning_complete" },
+        { "fromState": "learning", "toState": "stuck", "trigger": "cant_learn" }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "linear-main",
+      "type": "linear",
+      "token": "$LINEAR_API_KEY",
+      "config": {
+        "teamId": "WOPR"
+      }
+    }
+  ],
+  "watches": [
+    {
+      "id": "linear-started-to-architect",
+      "sourceId": "linear-main",
+      "event": "issue.started",
+      "flowName": "wopr-changeset"
+    }
+  ]
+}
