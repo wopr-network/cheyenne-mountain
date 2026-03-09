@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # review-bots-ready.sh <PR_NUMBER> <REPO>
 # Waits for CI to pass, then waits for review bots to post.
+# Only counts bot comments posted AFTER the latest push commit.
 # Exits 0 when ready. Exits 1 on failure.
 
 set -euo pipefail
@@ -21,26 +22,40 @@ if [ "${FAILED}" -gt "0" ]; then
   exit 1
 fi
 
-# Step 2: Wait for review bots (up to 10 minutes)
-echo "Waiting for review bots on PR #${PR_NUMBER}..." >&2
+# Step 2: Get the timestamp of the latest push commit on the PR branch
+LATEST_PUSH_AT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
+  --jq '.head.sha' 2>/dev/null | xargs -I{} \
+  gh api "repos/${REPO}/commits/{}" --jq '.commit.committer.date' 2>/dev/null || echo "")
+
+if [ -z "${LATEST_PUSH_AT}" ]; then
+  echo "Could not determine latest push timestamp; falling back to no timestamp filter." >&2
+  LATEST_PUSH_AT="1970-01-01T00:00:00Z"
+fi
+
+echo "Latest push at: ${LATEST_PUSH_AT}" >&2
+
+# Step 3: Wait for review bots (up to 10 minutes), counting only comments AFTER the latest push
+echo "Waiting for review bots on PR #${PR_NUMBER} (after ${LATEST_PUSH_AT})..." >&2
 DEADLINE=$(( $(date +%s) + 600 ))
 
 while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
-  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
-    --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
+  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" 2>/dev/null \
+    | jq --arg since "${LATEST_PUSH_AT}" \
+    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
     2>/dev/null || echo "0")
 
-  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-    --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
+  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" 2>/dev/null \
+    | jq --arg since "${LATEST_PUSH_AT}" \
+    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
     2>/dev/null || echo "0")
 
   TOTAL=$(( BOT_COUNT + TOP_COUNT ))
   if [ "${TOTAL}" -gt "0" ]; then
-    echo "Review bots posted (${TOTAL} comment(s)). PR #${PR_NUMBER} ready for review."
+    echo "Review bots posted (${TOTAL} comment(s) after latest push). PR #${PR_NUMBER} ready for review."
     exit 0
   fi
 
-  echo "No bot comments yet, waiting 30s..." >&2
+  echo "No bot comments since latest push yet, waiting 30s..." >&2
   sleep 30
 done
 
