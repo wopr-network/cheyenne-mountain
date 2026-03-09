@@ -6,6 +6,8 @@ services:
     container_name: defcon
     volumes:
       - defcon-data:/data
+      - repos-data:/data/repos
+      - worktrees-data:/data/worktrees
       - ./seed:/app/seed:ro
     environment:
       DEFCON_DB_PATH: /data/defcon.db
@@ -14,6 +16,7 @@ services:
       DEFCON_SEED_ROOT: /
       DEFCON_CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://battleaxe:3000
       DUMMY_MODE: ${DUMMY_MODE:-}
+      LINEAR_API_KEY: ${LINEAR_API_KEY}
     ports:
       - "3001:3001"
     networks:
@@ -31,6 +34,8 @@ services:
     container_name: radar
     volumes:
       - radar-data:/data
+      - repos-data:/repos:ro
+      - worktrees-data:/worktrees
       - ./seed:/app/seed:ro
       - ~/.claude:/claude-host:ro
       - ~/.claude/agents:/claude-agents:ro
@@ -82,3 +87,5 @@ networks:
 volumes:
   defcon-data:
   radar-data:
+  repos-data:
+  worktrees-data:

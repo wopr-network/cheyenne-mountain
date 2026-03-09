@@ -1,6 +1,12 @@
 FROM node:24-alpine
-RUN apk add --no-cache git
+RUN apk add --no-cache git wget
 RUN npm install -g pnpm @wopr-network/defcon@latest
 ENV CLI=/usr/local/lib/node_modules/@wopr-network/defcon/dist/src/execution/cli.js
+ENV GATES_DIR=/usr/local/lib/node_modules/@wopr-network/defcon/dist/gates
+# Copy gate scripts into the defcon gates directory at build time
+COPY seed/gates/ /usr/local/lib/node_modules/@wopr-network/defcon/dist/gates/
+RUN chmod +x /usr/local/lib/node_modules/@wopr-network/defcon/dist/gates/*.sh 2>/dev/null || true
+RUN mkdir -p /data/repos /data/worktrees && chown -R node:node /data
 WORKDIR /app
+USER node
 CMD ["sh", "-c", "SEED=${DUMMY_MODE:+/app/seed/flows-dummy.json}; node $CLI init --seed ${SEED:-/app/seed/flows.json} --db /data/defcon.db && node $CLI serve --http-only --http-host 0.0.0.0 --http-port 3001 --db /data/defcon.db"]

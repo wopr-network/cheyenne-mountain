@@ -3,9 +3,11 @@
     {
       "name": "wopr-changeset",
       "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge.",
+      "discipline": "engineering",
       "initialState": "architecting",
       "maxConcurrent": 4,
       "maxConcurrentPerRepo": 4,
+      "claimRetryAfterMs": 30000,
       "states": [
         { "name": "backlog", "mode": "passive" },
         { "name": "architecting", "modelTier": "opus", "mode": "active" },
@@ -26,20 +28,6 @@
       ]
     }
   ],
-  "sources": [
-    {
-      "id": "linear-main",
-      "type": "linear",
-      "token": "$LINEAR_API_KEY",
-      "config": { "teamId": "WOPR" }
-    }
-  ],
-  "watches": [
-    {
-      "id": "linear-started-to-architect",
-      "sourceId": "linear-main",
-      "event": "issue.started",
-      "flowName": "wopr-changeset"
-    }
-  ]
+  "sources": [],
+  "watches": []
 }
