@@ -7,9 +7,9 @@ if ! git fetch origin >/dev/null 2>&1; then
   echo '{"worktreeReady":false,"error":"fetch failed"}'
   exit 1
 fi
-if ! git rebase "origin/$DEFAULT_BRANCH" >/dev/null 2>&1; then
-  git rebase --abort
-  echo '{"worktreeReady": false, "error": "rebase conflict"}'
+if ! git merge "origin/$DEFAULT_BRANCH" --no-edit >/dev/null 2>&1; then
+  git merge --abort >/dev/null 2>&1
+  echo '{"worktreeReady": false, "error": "merge conflict"}'
   exit 1
 fi
 echo '{"worktreeReady": true}'
