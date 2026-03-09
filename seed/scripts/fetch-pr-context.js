@@ -20,11 +20,15 @@ function gh(...args) {
   }
 }
 
-// Determine the latest push timestamp on the PR branch using PR updated_at
-// (more reliable than commit.committer.date which can be rewritten by rebase --committer-date-is-author-date)
+// Determine the latest push timestamp using the head commit's committer.date.
+// PR.updated_at advances on any activity (comments, labels, title edits) — not just pushes —
+// which would incorrectly drop legitimate review comments via the created_at filter.
 let latestPushAt = "1970-01-01T00:00:00Z";
-const prUpdatedAt = gh("api", `repos/${repo}/pulls/${prNumber}`, "--jq", ".updated_at").trim();
-if (prUpdatedAt) latestPushAt = prUpdatedAt;
+const headSha = gh("api", `repos/${repo}/pulls/${prNumber}`, "--jq", ".head.sha").trim();
+if (headSha) {
+  const commitDate = gh("api", `repos/${repo}/commits/${headSha}`, "--jq", ".commit.committer.date").trim();
+  if (commitDate) latestPushAt = commitDate;
+}
 
 const inline = gh(
   "api", "--paginate", `repos/${repo}/pulls/${prNumber}/comments`,
