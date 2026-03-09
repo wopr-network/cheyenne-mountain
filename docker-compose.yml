@@ -38,7 +38,7 @@ services:
       - worktrees-data:/worktrees
       - ./seed:/app/seed:ro
       - ~/.claude:/claude-host:ro
-      - ~/.claude/agents:/claude-agents:ro
+      - ./agents:/claude-agents:ro
       - ~/radar/dist:/usr/local/lib/node_modules/@wopr-network/radar/dist:ro
     environment:
       RADAR_DB_PATH: /data/radar.db

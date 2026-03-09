@@ -34,7 +34,7 @@ Work in the worktree at the path in your assignment:
 1. Check for existing docs: README.md, docs/ directory, JSDoc in source files
 2. Update existing docs if the change modifies documented behavior
 3. Add new sections only if the change introduces something genuinely new
-4. If no documentation updates are needed (e.g., internal refactor, test-only change), that is a valid outcome — signal success
+4. If no documentation updates are needed (e.g., internal refactor, test-only change), that is a valid outcome — signal `docs_pr_created`
 
 ### Step 4: Commit and push
 
@@ -46,7 +46,16 @@ git commit -m "docs: update documentation for <issue-key>" \
 git push origin <branch>
 ```
 
-If no docs changes were needed, skip the commit — just signal success.
+If no docs changes were needed, skip the commit — just signal `docs_pr_created`.
+
+### Step 5: Signal your outcome
+
+The pipeline reads your response for one of these exact tokens:
+
+- `docs_pr_created` — documentation pushed (or no docs were needed). The pipeline advances to the next state.
+- `cant_document` — you were unable to complete documentation. The pipeline will requeue with your explanation.
+
+Emit exactly one of these tokens as the last line of your response.
 
 ## Rules
 
