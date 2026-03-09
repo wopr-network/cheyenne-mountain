@@ -1,0 +1,117 @@
+{
+  "flows": [
+    {
+      "name": "wopr-changeset",
+      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> merge. Replaces the hand-coded /wopr:auto skill.",
+      "discipline": "engineering",
+      "initialState": "architecting",
+      "maxConcurrent": 4,
+      "maxConcurrentPerRepo": 4,
+      "createdBy": "seed:wopr-changeset"
+    }
+  ],
+  "states": [
+    {
+      "name": "backlog",
+      "flowName": "wopr-changeset",
+      "mode": "passive"
+    },
+    {
+      "name": "architecting",
+      "flowName": "wopr-changeset",
+      "modelTier": "opus",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}",
+      "agentRole": "wopr-architect"
+    },
+    {
+      "name": "coding",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
+      "agentRole": "wopr-coder"
+    },
+    {
+      "name": "reviewing",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}",
+      "agentRole": "wopr-reviewer"
+    },
+    {
+      "name": "fixing",
+      "flowName": "wopr-changeset",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}",
+      "agentRole": "wopr-fixer"
+    },
+    {
+      "name": "stuck",
+      "flowName": "wopr-changeset",
+      "mode": "passive",
+      "constraints": {
+        "description": "Issue has been flagged 3+ times for the same finding. Requires human intervention."
+      }
+    },
+    {
+      "name": "done",
+      "flowName": "wopr-changeset",
+      "mode": "passive"
+    }
+  ],
+  "gates": [],
+  "transitions": [
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "backlog",
+      "toState": "architecting",
+      "trigger": "start",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "architecting",
+      "toState": "coding",
+      "trigger": "spec_ready",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "coding",
+      "toState": "reviewing",
+      "trigger": "pr_created",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "reviewing",
+      "toState": "done",
+      "trigger": "clean",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "reviewing",
+      "toState": "fixing",
+      "trigger": "issues",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "fixing",
+      "toState": "reviewing",
+      "trigger": "fixes_pushed",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-changeset",
+      "fromState": "fixing",
+      "toState": "stuck",
+      "trigger": "cant_resolve",
+      "priority": 1
+    }
+  ]
+}

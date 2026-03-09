@@ -1,0 +1,120 @@
+{
+  "flows": [
+    {
+      "name": "wopr-hotfix",
+      "description": "Fast-track pipeline for trivial fixes: skip architect, go straight to coding.",
+      "discipline": "engineering",
+      "initialState": "coding",
+      "maxConcurrent": 2,
+      "maxConcurrentPerRepo": 2,
+      "createdBy": "seed:wopr-hotfix"
+    }
+  ],
+  "states": [
+    {
+      "name": "coding",
+      "flowName": "wopr-hotfix",
+      "agentRole": "wopr-coder",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "onEnter": {
+        "command": "node /usr/local/lib/node_modules/@wopr-network/defcon/dist/src/execution/cli.js provision-worktree {{entity.refs.github.repo}} {{entity.refs.linear.key}} --base-path /data/worktrees --clone-root /data/repos | node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const lines=d.trim().split('\\n');for(let i=lines.length-1;i>=0;i--){try{const r=JSON.parse(lines[i]);const repoName='{{entity.refs.github.repo}}'.split('/').pop();process.stdout.write(JSON.stringify({...r,codebasePath:'/repos/'+repoName,worktreePath:r.worktreePath.replace('/data/worktrees/','/worktrees/')}));return}catch(e){}}process.exit(1)})\"",
+        "artifacts": ["codebasePath", "worktreePath", "branch"]
+      },
+      "promptTemplate": "You are a software engineer working inside an automated pipeline. This is a hotfix — there is no architect spec. Read the issue description, read the codebase, implement the fix, and create a PR.\n\n## Your Assignment\n\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Issue Description\n\n{{entity.refs.linear.description}}\n\n## How to Implement\n\n1. Read the codebase at {{entity.artifacts.codebasePath}} to understand the relevant code.\n2. Read CLAUDE.md in the repo root for project-specific gotchas.\n3. Implement the fix. Keep changes minimal — this is a hotfix, not a refactor.\n4. Write or update tests to cover the fix.\n5. Run the CI gate: `pnpm lint && pnpm format && pnpm build`\n6. Run targeted tests: `npx vitest run <test-file>` — NEVER `pnpm test` in worktrees.\n7. Push and create a PR with `gh pr create`.\n\n## Signal\n\nSay `PR created: <the full GitHub PR URL>` when done."
+    },
+    {
+      "name": "reviewing",
+      "flowName": "wopr-hotfix",
+      "agentRole": "wopr-reviewer",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "onEnter": {
+        "command": "node /app/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "artifacts": ["prComments", "prDiff"]
+      },
+      "promptTemplate": "You are a code reviewer for a hotfix PR. This is a fast-track fix — be thorough but focused. Check for correctness, test coverage, and no regressions.\n\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n\n{{entity.artifacts.prComments}}\n\n## Diff\n\n{{entity.artifacts.prDiff}}\n\n## Signal\n\nSay `CLEAN: {{entity.artifacts.prUrl}}` if no blocking issues.\nSay `ISSUES: {{entity.artifacts.prUrl}} — <semicolon-separated findings>` if issues found."
+    },
+    {
+      "name": "fixing",
+      "flowName": "wopr-hotfix",
+      "agentRole": "wopr-fixer",
+      "modelTier": "sonnet",
+      "mode": "active",
+      "onEnter": {
+        "command": "node /app/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+        "artifacts": ["prComments"]
+      },
+      "promptTemplate": "Fix the reviewer findings for this hotfix PR.\n\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Reviewer Findings\n\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n\n{{entity.artifacts.prComments}}\n\nFix each finding. Run `pnpm lint && pnpm format && pnpm build`. Push.\n\nSay `Fixes pushed: {{entity.artifacts.prUrl}}` when done."
+    },
+    {
+      "name": "stuck",
+      "flowName": "wopr-hotfix",
+      "mode": "passive"
+    },
+    {
+      "name": "done",
+      "flowName": "wopr-hotfix",
+      "mode": "passive"
+    }
+  ],
+  "gates": [
+    {
+      "name": "review-bots-ready",
+      "type": "command",
+      "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "timeoutMs": 1800000
+    },
+    {
+      "name": "merge-queue",
+      "type": "command",
+      "command": "gates/merge-queue.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "timeoutMs": 1800000,
+      "outcomes": {
+        "merged":  { "proceed": true },
+        "blocked": { "toState": "fixing" },
+        "closed":  { "toState": "stuck" }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "flowName": "wopr-hotfix",
+      "fromState": "coding",
+      "toState": "reviewing",
+      "trigger": "pr_created",
+      "gateName": "review-bots-ready",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-hotfix",
+      "fromState": "reviewing",
+      "toState": "done",
+      "trigger": "clean",
+      "gateName": "merge-queue",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-hotfix",
+      "fromState": "reviewing",
+      "toState": "fixing",
+      "trigger": "issues",
+      "priority": 1
+    },
+    {
+      "flowName": "wopr-hotfix",
+      "fromState": "fixing",
+      "toState": "reviewing",
+      "trigger": "fixes_pushed",
+      "gateName": "review-bots-ready",
+      "priority": 0
+    },
+    {
+      "flowName": "wopr-hotfix",
+      "fromState": "fixing",
+      "toState": "stuck",
+      "trigger": "cant_resolve",
+      "priority": 1
+    }
+  ]
+}
