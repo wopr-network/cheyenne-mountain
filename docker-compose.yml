@@ -33,6 +33,7 @@ services:
       - radar-data:/data
       - ./seed:/app/seed:ro
       - ~/.claude:/claude-host:ro
+      - ~/.claude/agents:/claude-agents:ro
       - ~/radar/dist:/usr/local/lib/node_modules/@wopr-network/radar/dist:ro
     environment:
       RADAR_DB_PATH: /data/radar.db
@@ -40,6 +41,7 @@ services:
       DEFCON_WORKER_TOKEN: ${DEFCON_WORKER_TOKEN}
       DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
       LINEAR_API_KEY: ${LINEAR_API_KEY}
+      RADAR_AGENTS_DIR: /claude-agents
       DUMMY_MODE: ${DUMMY_MODE:-}
     ports:
       - "8080:8080"

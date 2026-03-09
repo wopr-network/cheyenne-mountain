@@ -21,35 +21,40 @@
       "flowName": "wopr-changeset",
       "modelTier": "opus",
       "mode": "active",
-      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}",
+      "agentRole": "wopr-architect"
     },
     {
       "name": "coding",
       "flowName": "wopr-changeset",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
+      "agentRole": "wopr-coder"
     },
     {
       "name": "reviewing",
       "flowName": "wopr-changeset",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
+      "agentRole": "wopr-reviewer"
     },
     {
       "name": "fixing",
       "flowName": "wopr-changeset",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
+      "agentRole": "wopr-fixer"
     },
     {
       "name": "merging",
       "flowName": "wopr-changeset",
       "modelTier": "haiku",
       "mode": "active",
-      "promptTemplate": "Dummy mode: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}"
+      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}",
+      "agentRole": "wopr-watcher"
     },
     {
       "name": "stuck",
