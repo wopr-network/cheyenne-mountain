@@ -23,11 +23,11 @@ if [ "${FAILED}" -gt "0" ]; then
 fi
 
 # Step 1b: Check if this repo has review bots configured (historical check)
-HISTORICAL_INLINE=$(gh api "repos/${REPO}/pulls/comments?per_page=5" \
-  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length')
+HISTORICAL_INLINE=$(gh api "repos/${REPO}/pulls/comments?per_page=5&sort=created&direction=desc" \
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length' 2>/dev/null || echo "0")
 
-HISTORICAL_TOP=$(gh api "repos/${REPO}/issues/comments?per_page=5" \
-  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length')
+HISTORICAL_TOP=$(gh api "repos/${REPO}/issues/comments?per_page=5&sort=created&direction=desc" \
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length' 2>/dev/null || echo "0")
 
 HISTORICAL_BOTS=$(( HISTORICAL_INLINE + HISTORICAL_TOP ))
 
