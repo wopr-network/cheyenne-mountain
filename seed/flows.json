@@ -100,7 +100,7 @@
       "timeoutPrompt": "CI or review bots did not complete within 30 minutes for PR #{{entity.artifacts.prNumber}}. Check CI status and whether bots are configured for this repo. Re-signal the appropriate trigger for your current state to retry.",
       "outcomes": {
         "ready": { "proceed": true },
-        "ci_failed": { "toState": "fixing" }
+        "ci_failed": { "toState": "coding" }
       }
     },
     {
