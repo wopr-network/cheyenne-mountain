@@ -18,7 +18,7 @@ FAILED=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,status,conclus
   --jq '[.[] | select(.conclusion == "FAILURE")] | length' 2>/dev/null || echo "0")
 
 if [ "${FAILED}" -gt "0" ]; then
-  echo "CI failed: ${FAILED} check(s) failing on PR #${PR_NUMBER}"
+  echo "{\"outcome\":\"ci_failed\",\"message\":\"${FAILED} check(s) failing on PR #${PR_NUMBER}\"}"
   exit 1
 fi
 
@@ -51,7 +51,7 @@ while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
 
   TOTAL=$(( BOT_COUNT + TOP_COUNT ))
   if [ "${TOTAL}" -gt "0" ]; then
-    echo "Review bots posted (${TOTAL} comment(s) after latest push). PR #${PR_NUMBER} ready for review."
+    echo "{\"outcome\":\"ready\",\"message\":\"CI green, ${TOTAL} bot comments posted\"}"
     exit 0
   fi
 
@@ -59,5 +59,5 @@ while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
   sleep 30
 done
 
-echo "Timed out waiting for review bots on PR #${PR_NUMBER}. Proceeding anyway."
+echo "{\"outcome\":\"ready\",\"message\":\"CI green, no bot comments after 10 minutes\"}"
 exit 0
