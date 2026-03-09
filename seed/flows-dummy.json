@@ -48,7 +48,10 @@
       "mode": "active",
       "onEnter": {
         "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}} && node /app/seed/scripts/fetch-spec.js {{entity.refs.linear.id}}",
-        "artifacts": ["prComments", "architectSpec"]
+        "artifacts": [
+          "prComments",
+          "architectSpec"
+        ]
       },
       "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}\n\n{{#if entity.artifacts.architectSpec}}\n## Architect's Original Spec\n\nThis is the spec the coder followed. Your fixes must not violate this design.\n\n{{entity.artifacts.architectSpec}}\n\n**Conflict resolution**: If a reviewer finding directly contradicts the architect's spec, do NOT apply a spec-violating fix. Instead, output the following signal on its own line:\ncant_resolve\n{{/if}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nThe following is a log of what previous agents tried when working on this entity. Use this to avoid repeating failed approaches.\n\n{{entity.artifacts.activityHistory}}\n{{/if}}"
     },
@@ -59,7 +62,7 @@
       "modelTier": "sonnet",
       "mode": "active",
       "onEnter": {
-        "command": "sh /app/seed/scripts/rebase-worktree.sh {{entity.artifacts.defconWorktreePath}}",
+        "command": "sh /app/seed/scripts/rebase-worktree.sh /data{{entity.artifacts.worktreePath}}",
         "artifacts": [
           "worktreeReady"
         ],
