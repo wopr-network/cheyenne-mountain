@@ -20,20 +20,27 @@ function gh(...args) {
   }
 }
 
+// Determine the latest push timestamp on the PR branch
+const headSha = gh("api", `repos/${repo}/pulls/${prNumber}`, "--jq", ".head.sha").trim();
+let latestPushAt = "1970-01-01T00:00:00Z";
+if (headSha) {
+  const ts = gh("api", `repos/${repo}/commits/${headSha}`, "--jq", ".commit.committer.date").trim();
+  if (ts) latestPushAt = ts;
+}
+
 const inline = gh(
   "api", `repos/${repo}/pulls/${prNumber}/comments`,
-  "--jq", '.[] | "[\\(.user.login)] \\(.path):\\(.line // "?") — \\(.body)\n---"',
+  "--jq", `[.[] | select(.created_at > "${latestPushAt}")] | .[] | "[\\(.user.login)] \\(.path):\\(.line // "?") — \\(.body)\n---"`,
 );
 
 const formal = gh(
-  "pr", "view", prNumber, "--repo", repo,
-  "--json", "reviews",
-  "--jq", '.reviews[]? | "[\\(.author.login) / \\(.state)]\\n\\(.body)\n---"',
+  "api", `repos/${repo}/pulls/${prNumber}/reviews`,
+  "--jq", `[.[] | select(.submitted_at > "${latestPushAt}")] | .[] | "[\\(.user.login) / \\(.state)]\\n\\(.body)\n---"`,
 );
 
 const topLevel = gh(
   "api", `repos/${repo}/issues/${prNumber}/comments`,
-  "--jq", '.[] | "[\\(.user.login)]\\n\\(.body)\n---"',
+  "--jq", `[.[] | select(.created_at > "${latestPushAt}")] | .[] | "[\\(.user.login)]\\n\\(.body)\n---"`,
 );
 
 const diff = gh("pr", "diff", prNumber, "--repo", repo);
