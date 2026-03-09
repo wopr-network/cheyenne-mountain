@@ -121,7 +121,7 @@
       "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
       "timeoutMs": 1800000,
       "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed. Fix the failures in the worktree, push, and re-signal pr_created.",
-      "timeoutPrompt": "CI or review bots did not complete within 30 minutes for PR #{{entity.artifacts.prNumber}}. Check CI status and whether bots are configured for this repo. Re-signal pr_created to retry."
+      "timeoutPrompt": "Review bots did not post within the timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. The gate now fails when bots are expected but don't respond. Check bot configuration and CI status, then re-signal to retry."
     },
     {
       "name": "merge-queue",
