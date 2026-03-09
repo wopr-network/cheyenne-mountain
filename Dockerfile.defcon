@@ -1,5 +1,5 @@
 FROM node:24-alpine
-RUN apk add --no-cache git wget
+RUN apk add --no-cache git wget bash github-cli
 RUN npm install -g pnpm @wopr-network/defcon@latest
 ENV CLI=/usr/local/lib/node_modules/@wopr-network/defcon/dist/src/execution/cli.js
 ENV GATES_DIR=/usr/local/lib/node_modules/@wopr-network/defcon/dist/gates

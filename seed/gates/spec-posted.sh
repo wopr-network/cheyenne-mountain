@@ -14,6 +14,12 @@ if [ -z "${LINEAR_API_KEY:-}" ]; then
   exit 1
 fi
 
+# Validate ISSUE_ID format before use (must be alphanumeric with hyphens, e.g. WOP-1234)
+if ! echo "$ISSUE_ID" | grep -qE '^[A-Z]+-[0-9]+$'; then
+  echo "ERROR: Invalid ISSUE_ID format: $ISSUE_ID" >&2
+  exit 1
+fi
+
 QUERY="{\"query\":\"query(\$id: String!) { issue(id: \$id) { comments { nodes { body } } } }\",\"variables\":{\"id\":\"$ISSUE_ID\"}}"
 
 RESPONSE=$(wget -q -O - \

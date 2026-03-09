@@ -28,6 +28,22 @@
       ]
     }
   ],
-  "sources": [],
-  "watches": []
+  "sources": [
+    {
+      "id": "linear-main",
+      "type": "linear",
+      "token": "$LINEAR_API_KEY",
+      "config": {
+        "teamId": "WOPR"
+      }
+    }
+  ],
+  "watches": [
+    {
+      "id": "linear-started-to-architect",
+      "sourceId": "linear-main",
+      "event": "issue.started",
+      "flowName": "wopr-changeset"
+    }
+  ]
 }

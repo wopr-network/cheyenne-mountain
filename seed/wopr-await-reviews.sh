@@ -25,7 +25,10 @@ dump_reviews() {
 }
 
 echo "Waiting for CI checks to complete..." >&2
-gh pr checks "${PR_NUMBER}" --repo "${REPO}" --watch --interval 10 2>/dev/null || true
+if ! gh pr checks "${PR_NUMBER}" --repo "${REPO}" --watch --interval 10 2>/dev/null; then
+  echo "ERROR: CI checks failed for PR #${PR_NUMBER}" >&2
+  exit 1
+fi
 
 echo "ALL_POSTED: CI complete for PR #${PR_NUMBER}"
 dump_reviews
