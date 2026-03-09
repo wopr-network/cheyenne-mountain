@@ -120,7 +120,7 @@
       "type": "command",
       "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
       "timeoutMs": 1800000,
-      "failurePrompt": "CI failed or bot review timed out on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed. If CI is red, fix the failures in the worktree, push, and re-signal pr_created. If CI is green but no bot comments appeared within 10 minutes, check bot configuration for the repo and re-signal pr_created to retry.",
+      "failurePrompt": "The review-bots-ready gate exited with failure on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. This could mean: (1) CI check(s) failed — run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed, fix the failures in the worktree, push, and re-signal pr_created; or (2) Bot review timed out — CI is green but no bot comments (Qodo, CodeRabbit, Devin, Sourcery) appeared within 10 minutes, check if review bots are configured for this repo and re-signal pr_created to retry.",
       "timeoutPrompt": "The review-bots-ready gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status and bot configuration, then re-signal pr_created to retry."
     },
     {
