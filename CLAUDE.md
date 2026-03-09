@@ -7,3 +7,6 @@
 - Agent workflows that update CLAUDE.md must handle "create if not exists" — on fresh repos the file won't exist, causing cant_learn signals and pipeline stalls.
 - Signal tokens in agent .md files (e.g. `docs_pr_created`) must exactly match the transition triggers in flows.json (e.g. `docs_ready`) — mismatches cause silent gate failures.
 - Docker volume mounts for agent .md files must use repo-relative paths (`./agents:/claude-agents:ro`), never host-user paths (`~/.claude/agents`) — the latter breaks in CI and other machines.
+- Never hardcode `origin/main` as the default branch — detect dynamically via `git remote show origin | sed -n 's/.*HEAD branch: //p'`.
+- `worktreePath` (rewritten for radar container, e.g. `/worktrees/...`) differs from `defconWorktreePath` (host/defcon path, e.g. `/data/worktrees/...`) — always pass `defconWorktreePath` to defcon-side scripts like `rebase-worktree.sh`.
+- Use `git merge --no-edit origin/$BRANCH` not `git rebase` on branches already pushed to origin — rebase rewrites history and forces force-pushes.
