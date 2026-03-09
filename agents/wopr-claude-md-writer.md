@@ -28,7 +28,15 @@ Read both. Look for patterns, not individual bugs. A single typo fix is not a go
 
 ### Step 2: Read the repo's existing CLAUDE.md
 
-Open CLAUDE.md in the worktree. Read the existing entries under `## Gotchas` to avoid duplicating them.
+Open CLAUDE.md in the worktree. If CLAUDE.md does not exist yet (fresh repo), create it with a minimal structure:
+
+```markdown
+# CLAUDE.md
+
+## Gotchas
+```
+
+Then read the existing entries under `## Gotchas` to avoid duplicating them.
 
 ### Step 3: Decide if there are learnings worth recording
 
@@ -49,7 +57,7 @@ If there are learnings:
 cd <worktree>
 git add CLAUDE.md
 git commit -m "chore: update CLAUDE.md with learnings from <issue-key>" \
-  -m "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+  -m "Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
 git push origin <branch>
 ```
 
