@@ -155,6 +155,7 @@
       "fromState": "fixing",
       "toState": "reviewing",
       "trigger": "fixes_pushed",
+      "gateName": "review-bots-ready",
       "priority": 0
     },
     {
