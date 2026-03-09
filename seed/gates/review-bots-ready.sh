@@ -39,13 +39,13 @@ echo "Waiting for review bots on PR #${PR_NUMBER} (after ${LATEST_PUSH_AT})..." 
 DEADLINE=$(( $(date +%s) + 600 ))
 
 while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
-  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
-    --jq --arg since "${LATEST_PUSH_AT}" \
+  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" 2>/dev/null \
+    | jq --arg since "${LATEST_PUSH_AT}" \
     '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
     2>/dev/null || echo "0")
 
-  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-    --jq --arg since "${LATEST_PUSH_AT}" \
+  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" 2>/dev/null \
+    | jq --arg since "${LATEST_PUSH_AT}" \
     '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
     2>/dev/null || echo "0")
 
