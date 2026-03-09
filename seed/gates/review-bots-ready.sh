@@ -15,7 +15,7 @@ gh pr checks "${PR_NUMBER}" --repo "${REPO}" --watch --interval 15 2>/dev/null |
 
 # Check if CI actually passed
 FAILED=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,status,conclusion \
-  --jq '[.[] | select(.conclusion == "FAILURE")] | length' 2>/dev/null || echo "0")
+  --jq '[.[] | select(.conclusion == "FAILURE")] | length')
 
 if [ "${FAILED}" -gt "0" ]; then
   echo "{\"outcome\":\"ci_failed\",\"message\":\"${FAILED} check(s) failing on PR #${PR_NUMBER}\"}"
@@ -24,12 +24,10 @@ fi
 
 # Step 1b: Check if this repo has review bots configured (historical check)
 HISTORICAL_INLINE=$(gh api "repos/${REPO}/pulls/comments?per_page=5" \
-  --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
-  2>/dev/null || echo "0")
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length')
 
 HISTORICAL_TOP=$(gh api "repos/${REPO}/issues/comments?per_page=5" \
-  --jq '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i"))] | length' \
-  2>/dev/null || echo "0")
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length')
 
 HISTORICAL_BOTS=$(( HISTORICAL_INLINE + HISTORICAL_TOP ))
 
@@ -58,15 +56,13 @@ echo "Waiting for review bots on PR #${PR_NUMBER} (after ${LATEST_PUSH_AT})..." 
 DEADLINE=$(( $(date +%s) + 600 ))
 
 while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
-  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" 2>/dev/null \
+  BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
     | jq --arg since "${LATEST_PUSH_AT}" \
-    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
-    2>/dev/null || echo "0")
+    '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length')
 
-  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" 2>/dev/null \
+  TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
     | jq --arg since "${LATEST_PUSH_AT}" \
-    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
-    2>/dev/null || echo "0")
+    '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length')
 
   TOTAL=$(( BOT_COUNT + TOP_COUNT ))
   if [ "${TOTAL}" -gt "0" ]; then
