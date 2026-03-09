@@ -22,6 +22,23 @@ if [ "${FAILED}" -gt "0" ]; then
   exit 1
 fi
 
+# Step 1b: Check if this repo has review bots configured (historical check)
+HISTORICAL_INLINE=$(gh api "repos/${REPO}/pulls/comments?per_page=5&sort=created&direction=desc" \
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length' 2>/dev/null || echo "0")
+
+HISTORICAL_TOP=$(gh api "repos/${REPO}/issues/comments?per_page=5&sort=created&direction=desc" \
+  --jq '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i"))] | length' 2>/dev/null || echo "0")
+
+HISTORICAL_BOTS=$(( HISTORICAL_INLINE + HISTORICAL_TOP ))
+
+if [ "${HISTORICAL_BOTS}" -eq "0" ]; then
+  echo "No review bots configured for ${REPO}. Proceeding with CI-only gate." >&2
+  echo '{"outcome":"ready","message":"CI green, no bots configured"}'
+  exit 0
+fi
+
+echo "Review bots detected for ${REPO} (${HISTORICAL_BOTS} historical comments). Waiting for fresh comments..." >&2
+
 # Step 2: Get the timestamp of the latest push commit on the PR branch
 LATEST_PUSH_AT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
   --jq '.head.sha' 2>/dev/null | xargs -I{} \
@@ -41,13 +58,11 @@ DEADLINE=$(( $(date +%s) + 600 ))
 while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
   BOT_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" 2>/dev/null \
     | jq --arg since "${LATEST_PUSH_AT}" \
-    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
-    2>/dev/null || echo "0")
+    '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' 2>/dev/null || echo "0")
 
   TOP_COUNT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" 2>/dev/null \
     | jq --arg since "${LATEST_PUSH_AT}" \
-    '[.[] | select(.user.login | test("bot|qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' \
-    2>/dev/null || echo "0")
+    '[.[] | select(.user.login | test("qodo|coderabbit|devin|sourcery"; "i")) | select(.created_at > $since)] | length' 2>/dev/null || echo "0")
 
   TOTAL=$(( BOT_COUNT + TOP_COUNT ))
   if [ "${TOTAL}" -gt "0" ]; then
@@ -59,5 +74,6 @@ while [ "$(date +%s)" -lt "${DEADLINE}" ]; do
   sleep 30
 done
 
-echo "{\"outcome\":\"ready\",\"message\":\"CI green, no bot comments after 10 minutes\"}"
-exit 0
+echo "Review bots expected but none posted within 10 minutes." >&2
+echo "{\"outcome\":\"bot_timeout\",\"message\":\"Review bots expected but did not post within 10 minutes on PR #${PR_NUMBER}\"}"
+exit 1
