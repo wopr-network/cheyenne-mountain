@@ -14,8 +14,11 @@ gh pr checks "${PR_NUMBER}" --repo "${REPO}" --watch --interval 15 2>/dev/null |
 
 # Check for failures or non-green states (FAILURE, CANCELLED, STARTUP_FAILURE, TIMED_OUT)
 # gh pr checks --json exposes "state" with values: SUCCESS, FAILURE, PENDING, SKIPPED, etc.
-NON_GREEN=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,state \
-  --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING")] | length' 2>/dev/null || echo "0")
+if ! NON_GREEN=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,state \
+  --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING")] | length' 2>/dev/null); then
+  echo "{\"outcome\":\"ci_failed\",\"message\":\"Unable to determine CI status for PR #${PR_NUMBER}\"}"
+  exit 1
+fi
 
 if [ "${NON_GREEN}" -gt "0" ]; then
   NAMES=$(gh pr checks "${PR_NUMBER}" --repo "${REPO}" --json name,state \

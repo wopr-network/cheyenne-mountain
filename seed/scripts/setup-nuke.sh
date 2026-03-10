@@ -25,7 +25,9 @@ else
 fi
 
 if [ -n "$GH_TOKEN" ]; then
-  GH_PART="\"github\":{\"token\":\"${GH_TOKEN}\"}"
+  # Escape special JSON characters in the token
+  ESCAPED_TOKEN=$(printf '%s' "$GH_TOKEN" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  GH_PART="\"github\":{\"token\":\"${ESCAPED_TOKEN}\"}"
 else
   GH_PART=""
 fi
