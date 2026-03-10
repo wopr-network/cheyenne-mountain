@@ -2,7 +2,7 @@ services:
   defcon:
     build:
       context: .
-      dockerfile: Dockerfile.defcon
+      dockerfile: Dockerfile.silo
     container_name: defcon
     volumes:
       - defcon-data:/data
@@ -59,7 +59,7 @@ services:
   norad:
     build:
       context: ~/norad
-      dockerfile: /home/tsavo/silo/Dockerfile.norad
+      dockerfile: /home/tsavo/cheyenne-mountain/Dockerfile.norad
       args:
         NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
         NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}

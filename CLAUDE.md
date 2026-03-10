@@ -1,4 +1,4 @@
-# SILO — Docker Compose test harness for defcon+radar+norad
+# Cheyenne Mountain — WOPR deployment of silo (defcon+radar+norad)
 
 ## Gotchas
 - **PR timestamp filtering**: `PR.updated_at` advances on ANY activity (comments, labels, title edits), not just pushes. Use the head commit's `committer.date` via `repos/{owner}/{repo}/commits/{sha}` for actual push time.
