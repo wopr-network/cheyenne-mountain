@@ -1,8 +1,8 @@
 {
   "flows": [
     {
-      "name": "wopr-changeset-dummy",
-      "description": "Minimal scaffold of the wopr-changeset flow for testing — no gates, no onEnter hooks, stub prompts. Uses a distinct name to avoid collision with flows/wopr-changeset.json.",
+      "name": "wopr-changeset",
+      "description": "Dummy pipeline for testing. No gates, no onEnter hooks, minimal prompts.",
       "discipline": "engineering",
       "initialState": "architecting",
       "maxConcurrent": 4,
@@ -13,149 +13,80 @@
   "states": [
     {
       "name": "backlog",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
       "mode": "passive"
     },
     {
       "name": "architecting",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-architect",
       "modelTier": "opus",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}",
-      "agentRole": "wopr-architect"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\n## Issue Description\n{{entity.artifacts.linear.description}}\n\nWrite an implementation spec. Signal spec_ready when done."
     },
     {
       "name": "coding",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-coder",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures — Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}",
-      "agentRole": "wopr-coder"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nImplement the spec. Signal pr_created when done."
     },
     {
       "name": "reviewing",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-reviewer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}",
-      "agentRole": "wopr-reviewer"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}}\nRepo: {{entity.artifacts.github.repo}}\n\nReview the work. Signal clean or issues."
     },
     {
       "name": "fixing",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-fixer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}",
-      "agentRole": "wopr-fixer"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}}\nRepo: {{entity.artifacts.github.repo}}\n\nFix the findings. Signal fixes_pushed when done."
     },
     {
       "name": "documenting",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-technical-writer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "Update documentation for {{entity.refs.linear.key}}.\n\nSay `docs_ready: {{entity.refs.linear.key}}` when done.\nSay `cant_document` if not applicable.",
-      "agentRole": "wopr-technical-writer"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nUpdate docs if needed. Signal docs_ready when done."
     },
     {
       "name": "learning",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
+      "agentRole": "wopr-claude-md-writer",
       "modelTier": "haiku",
       "mode": "active",
-      "promptTemplate": "Extract lessons learned from {{entity.refs.linear.key}}.\n\nSay `learning_complete` when done.\nSay `cant_learn` if no lessons found.",
-      "agentRole": "wopr-claude-md-writer"
+      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nExtract lessons learned. Signal learning_complete when done."
     },
     {
       "name": "stuck",
-      "flowName": "wopr-changeset-dummy",
-      "mode": "passive",
-      "constraints": {
-        "description": "Issue has been flagged 3+ times for the same finding. Requires human intervention."
-      }
+      "flowName": "wopr-changeset",
+      "mode": "passive"
     },
     {
       "name": "done",
-      "flowName": "wopr-changeset-dummy",
+      "flowName": "wopr-changeset",
       "mode": "passive"
     }
   ],
   "gates": [],
   "transitions": [
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "backlog",
-      "toState": "architecting",
-      "trigger": "start",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "architecting",
-      "toState": "coding",
-      "trigger": "spec_ready",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "coding",
-      "toState": "reviewing",
-      "trigger": "pr_created",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "reviewing",
-      "toState": "documenting",
-      "trigger": "clean",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "reviewing",
-      "toState": "fixing",
-      "trigger": "issues",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "fixing",
-      "toState": "reviewing",
-      "trigger": "fixes_pushed",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "fixing",
-      "toState": "stuck",
-      "trigger": "cant_resolve",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "documenting",
-      "toState": "learning",
-      "trigger": "docs_ready",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "documenting",
-      "toState": "stuck",
-      "trigger": "cant_document",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "learning",
-      "toState": "done",
-      "trigger": "learning_complete",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset-dummy",
-      "fromState": "learning",
-      "toState": "stuck",
-      "trigger": "cant_learn",
-      "priority": 1
-    }
+    { "flowName": "wopr-changeset", "fromState": "backlog", "toState": "architecting", "trigger": "start", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "architecting", "toState": "coding", "trigger": "spec_ready", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "coding", "toState": "reviewing", "trigger": "pr_created", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "reviewing", "toState": "documenting", "trigger": "clean", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "reviewing", "toState": "fixing", "trigger": "issues", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "fixing", "toState": "reviewing", "trigger": "fixes_pushed", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "fixing", "toState": "stuck", "trigger": "cant_resolve", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "documenting", "toState": "learning", "trigger": "docs_ready", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "documenting", "toState": "stuck", "trigger": "cant_document", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "learning", "toState": "done", "trigger": "learning_complete", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "learning", "toState": "stuck", "trigger": "cant_learn", "priority": 1 }
   ]
 }

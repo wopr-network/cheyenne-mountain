@@ -2,7 +2,7 @@
   "flows": [
     {
       "name": "wopr-changeset",
-      "description": "WOPR continuous delivery pipeline: architect -> code -> review -> fix -> document -> learn -> merge. Dummy version with minimal prompts for testing.",
+      "description": "Dummy pipeline for testing. No gates, no onEnter hooks, minimal prompts.",
       "discipline": "engineering",
       "initialState": "architecting",
       "maxConcurrent": 4,
@@ -22,7 +22,7 @@
       "agentRole": "wopr-architect",
       "modelTier": "opus",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nCodebase (READ ONLY): {{entity.artifacts.codebasePath}}\n\n## Issue Description\n{{entity.refs.linear.description}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\n## Issue Description\n{{entity.refs.linear.description}}\n\nWrite an implementation spec. Signal spec_ready when done."
     },
     {
       "name": "coding",
@@ -30,7 +30,7 @@
       "agentRole": "wopr-coder",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## Architect's Spec\n{{entity.artifacts.architectSpec}}\n\n{{#if entity.artifacts.gate_failures}}\n## Prior Gate Failures \u2014 Address These\n{{#each entity.artifacts.gate_failures}}\n- **{{this.gateName}}** ({{this.failedAt}}): {{this.output}}\n{{/each}}\n{{/if}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nImplement the spec. Signal pr_created when done."
     },
     {
       "name": "reviewing",
@@ -38,7 +38,7 @@
       "agentRole": "wopr-reviewer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\n\n## Bot Review Comments\n{{entity.artifacts.prComments}}\n\n## Diff\n{{entity.artifacts.prDiff}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nA previous agent worked on this entity before this review cycle. Here is what they did:\n\n{{entity.artifacts.activityHistory}}\n{{/if}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\nReview the work. Signal clean or issues."
     },
     {
       "name": "fixing",
@@ -46,11 +46,7 @@
       "agentRole": "wopr-fixer",
       "modelTier": "sonnet",
       "mode": "active",
-      "onEnter": {
-        "command": "node /app/seed/scripts/fetch-pr-context.js {{entity.artifacts.prNumber}} {{entity.refs.github.repo}} && node /app/seed/scripts/fetch-spec.js {{entity.refs.linear.id}}",
-        "artifacts": ["prComments", "architectSpec"]
-      },
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}}\nLinear ID: {{entity.refs.linear.id}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\nReviewer Comment ID: {{entity.artifacts.reviewCommentId}}\n\n## Reviewer Findings\n{{entity.artifacts.reviewFindings}}\n\n## Current PR Comments\n{{entity.artifacts.prComments}}\n\n{{#if entity.artifacts.architectSpec}}\n## Architect's Original Spec\n\nThis is the spec the coder followed. Your fixes must not violate this design.\n\n{{entity.artifacts.architectSpec}}\n\n**Conflict resolution**: If a reviewer finding directly contradicts the architect's spec, do NOT apply a spec-violating fix. Instead, output the following signal on its own line:\ncant_resolve\n{{/if}}\n\n{{#if entity.artifacts.activityHistory}}\n## Prior Attempt History\n\nThe following is a log of what previous agents tried when working on this entity. Use this to avoid repeating failed approaches.\n\n{{entity.artifacts.activityHistory}}\n{{/if}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\nFix the findings. Signal fixes_pushed when done."
     },
     {
       "name": "documenting",
@@ -58,14 +54,7 @@
       "agentRole": "wopr-technical-writer",
       "modelTier": "sonnet",
       "mode": "active",
-      "onEnter": {
-        "command": "sh /app/seed/scripts/rebase-worktree.sh {{entity.artifacts.siloWorktreePath}}",
-        "artifacts": [
-          "worktreeReady"
-        ],
-        "failurePrompt": "The worktree merge failed. Signal: cant_document: {{entity.refs.linear.key}} \u2014 merge conflict"
-      },
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## PR Diff\n{{entity.artifacts.prDiff}}\n\n## PR Comments (review context)\n{{entity.artifacts.prComments}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nUpdate docs if needed. Signal docs_ready when done."
     },
     {
       "name": "learning",
@@ -73,15 +62,12 @@
       "agentRole": "wopr-claude-md-writer",
       "modelTier": "haiku",
       "mode": "active",
-      "promptTemplate": "## Assignment\nPR: {{entity.artifacts.prUrl}} (#{{entity.artifacts.prNumber}})\nIssue: {{entity.refs.linear.key}} \u2014 {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\nWorktree: {{entity.artifacts.worktreePath}}\nBranch: {{entity.artifacts.branch}}\n\n## PR Diff\n{{entity.artifacts.prDiff}}\n\n## PR Comments (review context)\n{{entity.artifacts.prComments}}"
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nExtract lessons learned. Signal learning_complete when done."
     },
     {
       "name": "stuck",
       "flowName": "wopr-changeset",
-      "mode": "passive",
-      "constraints": {
-        "description": "Issue has been flagged 3+ times for the same finding. Requires human intervention."
-      }
+      "mode": "passive"
     },
     {
       "name": "done",
@@ -89,84 +75,30 @@
       "mode": "passive"
     }
   ],
+  "nukes": [
+    {
+      "discipline": "engineering",
+      "image": "nuke-coder",
+      "onProvision": [
+        {
+          "command": "/app/seed/scripts/inject-credentials.sh {{nukeHost}} {{nukePort}}",
+          "timeout_ms": 10000
+        }
+      ]
+    }
+  ],
   "gates": [],
   "transitions": [
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "backlog",
-      "toState": "architecting",
-      "trigger": "start",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "architecting",
-      "toState": "coding",
-      "trigger": "spec_ready",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "coding",
-      "toState": "reviewing",
-      "trigger": "pr_created",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "reviewing",
-      "toState": "documenting",
-      "trigger": "clean",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "documenting",
-      "toState": "learning",
-      "trigger": "docs_ready",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "documenting",
-      "toState": "stuck",
-      "trigger": "cant_document",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "learning",
-      "toState": "done",
-      "trigger": "learning_complete",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "learning",
-      "toState": "stuck",
-      "trigger": "cant_learn",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "reviewing",
-      "toState": "fixing",
-      "trigger": "issues",
-      "priority": 1
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "fixing",
-      "toState": "reviewing",
-      "trigger": "fixes_pushed",
-      "priority": 0
-    },
-    {
-      "flowName": "wopr-changeset",
-      "fromState": "fixing",
-      "toState": "stuck",
-      "trigger": "cant_resolve",
-      "priority": 1
-    }
+    { "flowName": "wopr-changeset", "fromState": "backlog", "toState": "architecting", "trigger": "start", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "architecting", "toState": "coding", "trigger": "spec_ready", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "coding", "toState": "reviewing", "trigger": "pr_created", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "reviewing", "toState": "documenting", "trigger": "clean", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "reviewing", "toState": "fixing", "trigger": "issues", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "fixing", "toState": "reviewing", "trigger": "fixes_pushed", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "fixing", "toState": "stuck", "trigger": "cant_resolve", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "documenting", "toState": "learning", "trigger": "docs_ready", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "documenting", "toState": "stuck", "trigger": "cant_document", "priority": 1 },
+    { "flowName": "wopr-changeset", "fromState": "learning", "toState": "done", "trigger": "learning_complete", "priority": 0 },
+    { "flowName": "wopr-changeset", "fromState": "learning", "toState": "stuck", "trigger": "cant_learn", "priority": 1 }
   ]
 }

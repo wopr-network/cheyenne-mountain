@@ -1,8 +1,7 @@
 #!/bin/sh
 # merge-queue.sh <prNumber> <repo>
-# Queues auto-merge on the PR then polls until merged, failed, or timeout.
+# Waits for CI, queues auto-merge, then polls until merged, failed, or timeout.
 # Emits a JSON outcome line on the last line of output for silo gate routing.
-# Exits 0 on MERGED. Exits 1 on failure/closed. Times out after ~15 min.
 
 set -e
 
@@ -14,10 +13,29 @@ if [ -z "$PR_NUMBER" ] || [ -z "$REPO" ]; then
   exit 1
 fi
 
-# Queue auto-merge (idempotent — safe to call even if already queued)
+# Step 1: Wait for all CI checks to complete before attempting merge
+echo "Waiting for CI checks on PR #${PR_NUMBER}..." >&2
+gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --interval 15 2>/dev/null || true
+
+# Check for failures or non-green states (FAILURE, CANCELLED, STARTUP_FAILURE, TIMED_OUT)
+# gh pr checks --json exposes "state" with values: SUCCESS, FAILURE, PENDING, SKIPPED, etc.
+if ! NON_GREEN=$(gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
+  --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING")] | length' 2>/dev/null); then
+  echo "{\"outcome\":\"blocked\",\"message\":\"Unable to determine CI status for PR #${PR_NUMBER}\"}"
+  exit 1
+fi
+
+if [ "${NON_GREEN}" -gt "0" ]; then
+  NAMES=$(gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
+    --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING") | "\(.name) (\(.state))"] | join(", ")' 2>/dev/null || echo "unknown")
+  echo "{\"outcome\":\"blocked\",\"message\":\"CI failing on PR #${PR_NUMBER}: ${NAMES}\"}"
+  exit 1
+fi
+
+# Step 2: CI passed — queue auto-merge (idempotent)
 gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto 2>/dev/null || true
 
-# Poll until resolved (max 30 attempts × 30s = 15 minutes)
+# Step 3: Poll until merged or definitively failed (max 30 x 30s = 15 min)
 ATTEMPTS=0
 while [ "$ATTEMPTS" -lt 30 ]; do
   STATUS=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
@@ -26,22 +44,19 @@ while [ "$ATTEMPTS" -lt 30 ]; do
 
   case "$STATUS" in
     *state=MERGED*)
-      echo '{"outcome":"merged","message":"PR #'"$PR_NUMBER"' merged successfully"}'
+      echo "{\"outcome\":\"merged\",\"message\":\"PR #${PR_NUMBER} merged successfully\"}"
       exit 0
       ;;
     *state=CLOSED*)
-      echo '{"outcome":"closed","message":"PR #'"$PR_NUMBER"' was closed without merging"}'
-      exit 1
-      ;;
-    *merge=BLOCKED*)
-      echo '{"outcome":"blocked","message":"PR #'"$PR_NUMBER"' is blocked in merge queue: '"$STATUS"'"}'
+      echo "{\"outcome\":\"closed\",\"message\":\"PR #${PR_NUMBER} was closed without merging\"}"
       exit 1
       ;;
   esac
 
+  # BLOCKED/CLEAN/UNSTABLE are transient — auto-merge handles it, keep polling
   ATTEMPTS=$((ATTEMPTS + 1))
   sleep 30
 done
 
-echo '{"outcome":"blocked","message":"Timed out waiting for PR #'"$PR_NUMBER"' after 15 minutes. Last status: '"$STATUS"'"}'
+echo "{\"outcome\":\"timeout\",\"message\":\"Timed out waiting for PR #${PR_NUMBER} after 15 minutes. Last status: ${STATUS}\"}"
 exit 1
