@@ -1,4 +1,4 @@
-# Cheyenne Mountain — WOPR deployment of silo (defcon+radar+norad)
+# Cheyenne Mountain — WOPR deployment of silo
 
 ## Gotchas
 - **PR timestamp filtering**: `PR.updated_at` advances on ANY activity (comments, labels, title edits), not just pushes. Use the head commit's `committer.date` via `repos/{owner}/{repo}/commits/{sha}` for actual push time.
@@ -8,5 +8,4 @@
 - Signal tokens in agent .md files (e.g. `docs_pr_created`) must exactly match the transition triggers in flows.json (e.g. `docs_ready`) — mismatches cause silent gate failures.
 - Docker volume mounts for agent .md files must use repo-relative paths (`./agents:/claude-agents:ro`), never host-user paths (`~/.claude/agents`) — the latter breaks in CI and other machines.
 - Never hardcode `origin/main` as the default branch — detect dynamically via `git remote show origin | sed -n 's/.*HEAD branch: //p'`.
-- `worktreePath` (rewritten for radar container, e.g. `/worktrees/...`) differs from `defconWorktreePath` (host/defcon path, e.g. `/data/worktrees/...`) — always pass `defconWorktreePath` to defcon-side scripts like `rebase-worktree.sh`.
 - Use `git merge --no-edit origin/$BRANCH` not `git rebase` on branches already pushed to origin — rebase rewrites history and forces force-pushes.

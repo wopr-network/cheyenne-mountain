@@ -1,22 +1,25 @@
 services:
-  defcon:
+  silo:
     build:
       context: .
       dockerfile: Dockerfile.silo
-    container_name: defcon
+    container_name: silo
     volumes:
-      - defcon-data:/data
+      - silo-data:/data
       - repos-data:/data/repos
       - worktrees-data:/data/worktrees
       - ./seed:/app/seed:ro
+      - ~/.claude:/claude-host:ro
+      - ./agents:/claude-agents:ro
     environment:
-      DEFCON_DB_PATH: /data/defcon.db
-      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
-      DEFCON_WORKER_TOKEN: ${DEFCON_WORKER_TOKEN}
-      DEFCON_SEED_ROOT: /
-      DEFCON_CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://battleaxe:3000
+      SILO_DB_PATH: /data/silo.db
+      SILO_ADMIN_TOKEN: ${SILO_ADMIN_TOKEN}
+      SILO_WORKER_TOKEN: ${SILO_WORKER_TOKEN}
+      SILO_SEED_ROOT: /
+      SILO_CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://battleaxe:3000
       DUMMY_MODE: ${DUMMY_MODE:-}
       LINEAR_API_KEY: ${LINEAR_API_KEY}
+      RADAR_AGENTS_DIR: /claude-agents
     ports:
       - "3001:3001"
     networks:
@@ -27,65 +30,32 @@ services:
       retries: 10
       start_period: 15s
 
-  radar:
-    build:
-      context: .
-      dockerfile: Dockerfile.radar
-    container_name: radar
-    volumes:
-      - radar-data:/data
-      - repos-data:/repos:ro
-      - worktrees-data:/worktrees
-      - ./seed:/app/seed:ro
-      - ~/.claude:/claude-host:ro
-      - ./agents:/claude-agents:ro
-      - ~/radar/dist:/usr/local/lib/node_modules/@wopr-network/radar/dist:ro
-    environment:
-      RADAR_DB_PATH: /data/radar.db
-      DEFCON_URL: http://defcon:3001
-      DEFCON_WORKER_TOKEN: ${DEFCON_WORKER_TOKEN}
-      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
-      LINEAR_API_KEY: ${LINEAR_API_KEY}
-      RADAR_AGENTS_DIR: /claude-agents
-      DUMMY_MODE: ${DUMMY_MODE:-}
-    ports:
-      - "8080:8080"
-    networks:
-      - pipeline
-    depends_on:
-      defcon:
-        condition: service_healthy
-
   norad:
     build:
       context: ~/norad
       dockerfile: /home/tsavo/cheyenne-mountain/Dockerfile.norad
       args:
-        NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
-        NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}
+        NEXT_PUBLIC_SILO_WS_URL: ${NORAD_SILO_WS_URL:-}
+        NEXT_PUBLIC_SILO_WS_TOKEN: ${SILO_ADMIN_TOKEN}
     container_name: norad
     environment:
-      DEFCON_URL: http://defcon:3001
-      DEFCON_ADMIN_TOKEN: ${DEFCON_ADMIN_TOKEN}
-      RADAR_URL: http://radar:8080
-      NEXT_PUBLIC_DEFCON_WS_URL: ${NORAD_DEFCON_WS_URL:-}
-      NEXT_PUBLIC_DEFCON_WS_TOKEN: ${DEFCON_ADMIN_TOKEN}
+      SILO_URL: http://silo:3001
+      SILO_ADMIN_TOKEN: ${SILO_ADMIN_TOKEN}
+      NEXT_PUBLIC_SILO_WS_URL: ${NORAD_SILO_WS_URL:-}
+      NEXT_PUBLIC_SILO_WS_TOKEN: ${SILO_ADMIN_TOKEN}
     ports:
       - "3000:3000"
     networks:
       - pipeline
     depends_on:
-      defcon:
+      silo:
         condition: service_healthy
-      radar:
-        condition: service_started
 
 networks:
   pipeline:
     driver: bridge
 
 volumes:
-  defcon-data:
-  radar-data:
+  silo-data:
   repos-data:
   worktrees-data:

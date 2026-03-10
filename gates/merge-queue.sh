@@ -1,7 +1,7 @@
 #!/bin/sh
 # merge-queue.sh <prNumber> <repo>
 # Queues auto-merge on the PR then polls until merged, failed, or timeout.
-# Emits a JSON outcome line on the last line of output for defcon gate routing.
+# Emits a JSON outcome line on the last line of output for silo gate routing.
 # Exits 0 on MERGED. Exits 1 on failure/closed. Times out after ~15 min.
 
 set -e

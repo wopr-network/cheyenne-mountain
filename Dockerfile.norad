@@ -2,8 +2,8 @@ FROM node:24-alpine
 RUN npm install -g pnpm
 WORKDIR /app
 COPY . .
-ARG NEXT_PUBLIC_DEFCON_WS_URL
-ARG NEXT_PUBLIC_DEFCON_WS_TOKEN
+ARG NEXT_PUBLIC_SILO_WS_URL
+ARG NEXT_PUBLIC_SILO_WS_TOKEN
 RUN CI=true pnpm install --frozen-lockfile && pnpm build
 ENV NODE_ENV=production
 EXPOSE 3000

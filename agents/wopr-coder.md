@@ -16,7 +16,8 @@ Work in the worktree at the path in your assignment:
 1. Write the failing test first (TDD)
 2. Implement minimal code to pass the test
 3. Run targeted tests: `npx vitest run <test-file>` — NEVER `pnpm test` in worktrees (OOMs)
-4. Commit after each green task using conventional commits
+4. Commit immediately after each test goes green — do not batch commits
+5. Each commit = one passing test or one logical unit of work. Never accumulate changes across multiple tests before committing.
 
 ### Step 2: Run the CI gate before creating the PR
 ```bash
@@ -52,7 +53,7 @@ PR created: <full PR URL>
 
 Example: `PR created: https://github.com/wopr-network/wopr/pull/123`
 
-Radar's signal parser extracts the PR URL and number from this line automatically. Do NOT call defcon's API directly — radar handles signal reporting.
+Silo's signal parser extracts the PR URL and number from this line automatically. Do NOT call silo.s API directly — silo handles signal reporting.
 
 ## Rules
 

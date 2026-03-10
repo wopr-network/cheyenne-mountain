@@ -50,7 +50,7 @@ If any issues found:
 
    Example: `ISSUES: https://github.com/wopr-network/wopr/pull/123 — unused import in auth.ts:42; missing null check in handler.ts:17`
 
-   Radar's signal parser extracts the URL and findings automatically. Do NOT call defcon's API directly — radar handles signal reporting.
+   Silo's signal parser extracts the URL and findings automatically. Do NOT call silo.s API directly — silo handles signal reporting.
 
 ## Rules
 

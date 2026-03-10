@@ -59,7 +59,7 @@
       "modelTier": "sonnet",
       "mode": "active",
       "onEnter": {
-        "command": "sh /app/seed/scripts/rebase-worktree.sh {{entity.artifacts.defconWorktreePath}}",
+        "command": "sh /app/seed/scripts/rebase-worktree.sh {{entity.artifacts.siloWorktreePath}}",
         "artifacts": [
           "worktreeReady"
         ],

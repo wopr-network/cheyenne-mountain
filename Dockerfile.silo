@@ -1,12 +1,13 @@
 FROM node:24-alpine
 RUN apk add --no-cache git wget bash github-cli
-RUN npm install -g pnpm @wopr-network/silo@latest
+RUN npm install -g pnpm @wopr-network/silo@latest @anthropic-ai/claude-code @anthropic-ai/claude-agent-sdk
 ENV CLI=/usr/local/lib/node_modules/@wopr-network/silo/dist/src/execution/cli.js
 ENV GATES_DIR=/usr/local/lib/node_modules/@wopr-network/silo/dist/gates
 # Copy gate scripts into the silo gates directory at build time
 COPY seed/gates/ /usr/local/lib/node_modules/@wopr-network/silo/dist/gates/
 RUN chmod +x /usr/local/lib/node_modules/@wopr-network/silo/dist/gates/*.sh 2>/dev/null || true
 RUN mkdir -p /data/repos /data/worktrees && chown -R node:node /data
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 WORKDIR /app
 USER node
-CMD ["sh", "-c", "SEED=${DUMMY_MODE:+/app/seed/flows-dummy.json}; node $CLI init --seed ${SEED:-/app/seed/flows.json} --db /data/defcon.db && node $CLI serve --http-only --http-host 0.0.0.0 --http-port 3001 --db /data/defcon.db"]
+CMD ["sh", "-c", "mkdir -p /home/node/.claude && cp /claude-host/.credentials.json /home/node/.claude/.credentials.json 2>/dev/null || true && SEED=${DUMMY_MODE:+/app/seed/flows-dummy.json}; node $CLI init --seed ${SEED:-/app/seed/flows.json} --db /data/silo.db && node $CLI serve --http-only --http-host 0.0.0.0 --http-port 3001 --db /data/silo.db"]
