@@ -55,5 +55,5 @@ while [ "$ATTEMPTS" -lt 30 ]; do
   sleep 30
 done
 
-echo "{\"outcome\":\"blocked\",\"message\":\"Timed out waiting for PR #${PR_NUMBER} after 15 minutes. Last status: ${STATUS}\"}"
+echo "{\"outcome\":\"timeout\",\"message\":\"Timed out waiting for PR #${PR_NUMBER} after 15 minutes. Last status: ${STATUS}\"}"
 exit 1

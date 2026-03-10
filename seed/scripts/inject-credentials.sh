@@ -18,10 +18,14 @@ if [ ! -f "$CREDS_FILE" ]; then
   exit 1
 fi
 
+# Wrap credentials in { claude: <creds> } envelope to match setup-nuke.sh format
+CLAUDE_JSON=$(cat "$CREDS_FILE")
+CREDS_BODY="{\"claude\":${CLAUDE_JSON}}"
+
 # POST credentials to the nuke container
 HTTP_CODE=$(wget --method=POST \
   --header="Content-Type: application/json" \
-  --body-file="$CREDS_FILE" \
+  --body-data="$CREDS_BODY" \
   -qO /dev/null -S \
   "http://${NUKE_HOST}:${NUKE_PORT}/credentials" 2>&1 | grep "HTTP/" | tail -1 | awk '{print $2}')
 

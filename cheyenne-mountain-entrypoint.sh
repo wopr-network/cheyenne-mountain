@@ -26,4 +26,4 @@ exec node "$CLI" serve \
   --http-host 0.0.0.0 \
   --http-port 3001 \
   --db /data/silo.db \
-  $WORKER_FLAGS
+  ${WORKER_FLAGS}

@@ -22,7 +22,7 @@
       "agentRole": "wopr-architect",
       "modelTier": "opus",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\n## Issue Description\n{{entity.artifacts.linear.description}}\n\nWrite an implementation spec. Signal spec_ready when done."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\n## Issue Description\n{{entity.refs.linear.description}}\n\nWrite an implementation spec. Signal spec_ready when done."
     },
     {
       "name": "coding",
@@ -30,7 +30,7 @@
       "agentRole": "wopr-coder",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nImplement the spec. Signal pr_created when done."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nImplement the spec. Signal pr_created when done."
     },
     {
       "name": "reviewing",
@@ -38,7 +38,7 @@
       "agentRole": "wopr-reviewer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}}\nRepo: {{entity.artifacts.github.repo}}\n\nReview the work. Signal clean or issues."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\nReview the work. Signal clean or issues."
     },
     {
       "name": "fixing",
@@ -46,7 +46,7 @@
       "agentRole": "wopr-fixer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}}\nRepo: {{entity.artifacts.github.repo}}\n\nFix the findings. Signal fixes_pushed when done."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}}\nRepo: {{entity.refs.github.repo}}\n\nFix the findings. Signal fixes_pushed when done."
     },
     {
       "name": "documenting",
@@ -54,7 +54,7 @@
       "agentRole": "wopr-technical-writer",
       "modelTier": "sonnet",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nUpdate docs if needed. Signal docs_ready when done."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nUpdate docs if needed. Signal docs_ready when done."
     },
     {
       "name": "learning",
@@ -62,7 +62,7 @@
       "agentRole": "wopr-claude-md-writer",
       "modelTier": "haiku",
       "mode": "active",
-      "promptTemplate": "## Assignment\nIssue: {{entity.artifacts.linear.key}} — {{entity.artifacts.linear.title}}\nRepo: {{entity.artifacts.github.repo}}\n\nExtract lessons learned. Signal learning_complete when done."
+      "promptTemplate": "## Assignment\nIssue: {{entity.refs.linear.key}} — {{entity.refs.linear.title}}\nRepo: {{entity.refs.github.repo}}\n\nExtract lessons learned. Signal learning_complete when done."
     },
     {
       "name": "stuck",
@@ -81,7 +81,7 @@
       "image": "nuke-coder",
       "onProvision": [
         {
-          "command": "/seed/scripts/inject-credentials.sh {{nukeHost}} {{nukePort}}",
+          "command": "/app/seed/scripts/inject-credentials.sh {{nukeHost}} {{nukePort}}",
           "timeout_ms": 10000
         }
       ]

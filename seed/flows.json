@@ -156,6 +156,9 @@
         },
         "closed": {
           "toState": "stuck"
+        },
+        "timeout": {
+          "toState": "stuck"
         }
       }
     }
