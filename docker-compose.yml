@@ -15,7 +15,6 @@ services:
       - ./seed:/app/seed:ro
       - ~/.claude:/claude-host:ro
       - ./agents:/claude-agents:ro
-      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       SILO_DB_PATH: /data/silo.db
       SILO_ADMIN_TOKEN: ${SILO_ADMIN_TOKEN}

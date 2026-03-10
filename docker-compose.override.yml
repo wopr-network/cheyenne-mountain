@@ -1,0 +1,6 @@
+# Local dev overrides — not used in production.
+# docker-compose automatically merges this file.
+services:
+  silo:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

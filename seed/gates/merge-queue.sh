@@ -17,13 +17,14 @@ fi
 echo "Waiting for CI checks on PR #${PR_NUMBER}..." >&2
 gh pr checks "$PR_NUMBER" --repo "$REPO" --watch --interval 15 2>/dev/null || true
 
-# Check for CI failures
-FAILED=$(gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
-  --jq '[.[] | select(.state == "FAILURE")] | length' 2>/dev/null || echo "0")
+# Check for failures or non-green states (FAILURE, CANCELLED, STARTUP_FAILURE, TIMED_OUT)
+# gh pr checks --json exposes "state" with values: SUCCESS, FAILURE, PENDING, SKIPPED, etc.
+NON_GREEN=$(gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
+  --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING")] | length' 2>/dev/null || echo "0")
 
-if [ "${FAILED}" -gt "0" ]; then
+if [ "${NON_GREEN}" -gt "0" ]; then
   NAMES=$(gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
-    --jq '[.[] | select(.state == "FAILURE") | .name] | join(", ")' 2>/dev/null || echo "unknown")
+    --jq '[.[] | select(.state != "SUCCESS" and .state != "SKIPPED" and .state != "PENDING") | "\(.name) (\(.state))"] | join(", ")' 2>/dev/null || echo "unknown")
   echo "{\"outcome\":\"blocked\",\"message\":\"CI failing on PR #${PR_NUMBER}: ${NAMES}\"}"
   exit 1
 fi
