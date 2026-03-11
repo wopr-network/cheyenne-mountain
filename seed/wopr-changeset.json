@@ -68,8 +68,12 @@
   "gates": [
     {
       "name": "spec-posted",
-      "type": "command",
-      "command": "gates/spec-posted.sh {{entity.refs.linear.id}}",
+      "type": "primitive",
+      "primitiveOp": "issue_tracker.comment_exists",
+      "primitiveParams": {
+        "issueId": "{{entity.refs.linear.id}}",
+        "pattern": "## Implementation Spec"
+      },
       "timeoutMs": 60000,
       "failurePrompt": "The architect spec comment was not found on Linear issue {{entity.refs.linear.key}}. Check that the architect posted a comment containing '## Implementation Spec' on the issue before signalling spec_ready.",
       "timeoutPrompt": "Timed out checking for architect spec on {{entity.refs.linear.key}}. The Linear API may be slow or unreachable. Retry the spec_ready signal."
