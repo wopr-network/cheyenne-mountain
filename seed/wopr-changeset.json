@@ -75,16 +75,16 @@
         "pattern": "## Implementation Spec"
       },
       "timeoutMs": 60000,
-      "failurePrompt": "The architect spec comment was not found on Linear issue {{entity.refs.linear.key}}. Check that the architect posted a comment containing '## Implementation Spec' on the issue before signalling spec_ready.",
-      "timeoutPrompt": "Timed out checking for architect spec on {{entity.refs.linear.key}}. The Linear API may be slow or unreachable. Retry the spec_ready signal."
+      "failurePrompt": "The pipeline checked Linear issue {{entity.refs.linear.key}} for a comment beginning with '## Implementation Spec' and did not find one. This means the architect either did not post the spec, posted it under a different heading, or it was deleted. Open the issue in Linear and check the comments. If the spec is missing, run the architecting step again: read the codebase at {{entity.artifacts.codebasePath}}, write a detailed implementation spec, and post it as a comment on issue {{entity.refs.linear.id}}. The comment body MUST start with the exact heading '## Implementation Spec' — the gate checks for this string literally. Once the comment exists, say this exact line:\n\nSpec ready: {{entity.refs.linear.key}}",
+      "timeoutPrompt": "The pipeline tried to verify the architect spec on Linear issue {{entity.refs.linear.key}} but the check timed out after 60 seconds. This usually means the Linear API is temporarily slow or unreachable. Check whether a spec comment exists on the issue by running: `gh api graphql -f query='{ issue(id: \"{{entity.refs.linear.id}}\") { comments { nodes { body } } } }'` or by opening the issue in the Linear web app. If the spec is there, say this exact line:\n\nSpec ready: {{entity.refs.linear.key}}\n\nIf it is not there, post it now and then say that line."
     },
     {
       "name": "ci-green",
       "type": "command",
       "command": "gates/ci-green.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
       "timeoutMs": 1200000,
-      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed. Fix the failures in the worktree, push, and re-signal pr_created.",
-      "timeoutPrompt": "CI checks did not complete within 20 minutes for PR #{{entity.artifacts.prNumber}}. This usually means a check is stuck. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to identify the hung check. Consider re-triggering CI with an empty commit: `git commit --allow-empty -m 'ci: trigger re-run' && git push`."
+      "failurePrompt": "The pipeline checked CI on PR #{{entity.artifacts.prNumber}} and found one or more failing checks. The PR cannot advance to review until all required checks are green. Run this to see exactly which checks failed:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nFor each failing check, read the failure log and fix the underlying problem in your worktree at {{entity.artifacts.worktreePath}}. Run the build and tests locally to confirm the fix before pushing. Once your fixes are committed and pushed, say this exact line:\n\nPR created: {{entity.artifacts.prUrl}}",
+      "timeoutPrompt": "CI checks on PR #{{entity.artifacts.prNumber}} have been running for over 20 minutes without completing. This usually means one check is hung or a self-hosted runner went offline. Run this to identify the hung check:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nIf a check is stuck, push an empty commit to cancel and re-trigger CI:\n\n```\ncd {{entity.artifacts.worktreePath}} && git commit --allow-empty -m 'ci: trigger re-run' && git push\n```\n\nOnce all checks are green, say this exact line:\n\nPR created: {{entity.artifacts.prUrl}}"
     },
     {
       "name": "review-bots-ready",
@@ -95,7 +95,7 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
-      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}} before review bots could finish. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed, fix in the worktree, push, then re-signal clean.",
+      "failurePrompt": "The pipeline checked CI on PR #{{entity.artifacts.prNumber}} after the reviewer said it was clean, and found failing checks. The PR cannot enter the merge queue with red CI. Run this to see which checks failed:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nFix the failures in your worktree at {{entity.artifacts.worktreePath}}. Run the build and tests locally to confirm they pass, then commit and push. Once CI is green, say this exact line:\n\nCLEAN: {{entity.artifacts.prUrl}}",
       "outcomes": {
         "passed": {
           "proceed": true
@@ -104,7 +104,7 @@
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, fix if needed, then re-signal clean."
+      "timeoutPrompt": "The pipeline waited 30 minutes for CI checks on PR #{{entity.artifacts.prNumber}} to complete before entering the merge queue, but they have not finished. Run this to see the current check status:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nIf a check is stuck, push an empty commit to re-trigger CI:\n\n```\ncd {{entity.artifacts.worktreePath}} && git commit --allow-empty -m 'ci: trigger re-run' && git push\n```\n\nOnce all checks are green, say this exact line:\n\nCLEAN: {{entity.artifacts.prUrl}}"
     },
     {
       "name": "merge-queue",
@@ -115,8 +115,8 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
-      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed or was blocked in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, merge from the default branch: `git fetch origin && MAIN=$(git remote show origin | sed -n 's/.*HEAD branch: //p') && git merge --no-edit origin/$MAIN && git push`. If CI failed in queue, check the failing checks and fix.",
-      "timeoutPrompt": "PR #{{entity.artifacts.prNumber}} did not merge within 30 minutes in {{entity.refs.github.repo}}. Check CI status with `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}`. If checks are stuck, push an empty commit to re-trigger CI.",
+      "failurePrompt": "The pipeline attempted to merge PR #{{entity.artifacts.prNumber}} and it was blocked. Check the PR status to understand why:\n\n```\ngh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus,mergeable\n```\n\nIf the status is DIRTY (the branch has fallen behind the base branch), merge the default branch into your worktree and push:\n\n```\ncd {{entity.artifacts.worktreePath}}\ngit fetch origin\nMAIN=$(git remote show origin | sed -n 's/.*HEAD branch: //p')\ngit merge --no-edit origin/$MAIN\ngit push\n```\n\nIf CI failed inside the merge queue, identify the failing check:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nFix the failures, commit, and push. Once the PR is back in a mergeable state, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}",
+      "timeoutPrompt": "The pipeline tried to merge PR #{{entity.artifacts.prNumber}} but it has not merged after 30 minutes. This usually means a CI check inside the merge queue is stuck. Check the current status:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\ngh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus\n```\n\nIf checks are stuck, push an empty commit to cancel and re-trigger:\n\n```\ncd {{entity.artifacts.worktreePath}} && git commit --allow-empty -m 'ci: trigger re-run' && git push\n```\n\nIf the PR was closed rather than merged, report it. Otherwise, once the PR merges, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}",
       "outcomes": {
         "merged": {
           "proceed": true
