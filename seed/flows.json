@@ -140,7 +140,7 @@
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The review-bots-ready gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal pr_created to retry."
+      "timeoutPrompt": "The review-bots-ready gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal with the appropriate trigger (pr_created or fixes_pushed) to retry."
     },
     {
       "name": "merge-queue",

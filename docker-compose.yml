@@ -24,7 +24,7 @@ services:
       DUMMY_MODE: ${DUMMY_MODE:-}
       LINEAR_API_KEY: ${LINEAR_API_KEY}
       RADAR_AGENTS_DIR: /claude-agents
-      NUKE_NETWORK: cheyenne-mountain_pipeline
+      NUKE_NETWORK: ${PIPELINE_NETWORK:-cheyenne-mountain_pipeline}
       GH_TOKEN: ${GH_TOKEN}
       SILO_DISCIPLINE: ${SILO_DISCIPLINE:-engineering}
       SILO_SLOTS: ${SILO_SLOTS:-1}
@@ -61,6 +61,7 @@ services:
 
 networks:
   pipeline:
+    name: ${PIPELINE_NETWORK:-cheyenne-mountain_pipeline}
     driver: bridge
 
 volumes:
