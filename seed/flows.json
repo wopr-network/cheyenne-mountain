@@ -121,32 +121,47 @@
   "gates": [
     {
       "name": "spec-posted",
-      "type": "command",
-      "command": "gates/spec-posted.sh {{entity.refs.linear.id}}",
+      "type": "primitive",
+      "primitiveOp": "issue_tracker.comment_exists",
+      "primitiveParams": {
+        "issueId": "{{entity.refs.linear.id}}",
+        "pattern": "## Implementation Spec"
+      },
       "timeoutMs": 60000,
-      "failurePrompt": "The architect spec comment was not found on Linear issue {{entity.refs.linear.key}}. Check that the architect posted a comment containing '## Implementation Spec' on the issue before signalling spec_ready.",
-      "timeoutPrompt": "Timed out checking for architect spec on {{entity.refs.linear.key}}. The Linear API may be slow or unreachable. Retry the spec_ready signal."
+      "failurePrompt": "The pipeline checked Linear issue {{entity.refs.linear.key}} for a comment beginning with '## Implementation Spec' and did not find one. This means the architect either did not post the spec, posted it under a different heading, or it was deleted. Open the issue in Linear and check the comments. If the spec is missing, run the architecting step again: read the codebase at {{entity.artifacts.codebasePath}}, write a detailed implementation spec, and post it as a comment on issue {{entity.refs.linear.id}}. The comment body MUST start with the exact heading '## Implementation Spec' — the gate checks for this string literally. Once the comment exists, say this exact line:\n\nSpec ready: {{entity.refs.linear.key}}",
+      "timeoutPrompt": "The pipeline tried to verify the architect spec on Linear issue {{entity.refs.linear.key}} but the check timed out after 60 seconds. This usually means the Linear API is temporarily slow or unreachable. Check whether a spec comment exists on the issue by opening the issue in the Linear web app. If the spec is there, say this exact line:\n\nSpec ready: {{entity.refs.linear.key}}\n\nIf it is not there, post it now and then say that line."
     },
     {
       "name": "review-bots-ready",
-      "type": "command",
-      "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "type": "primitive",
+      "primitiveOp": "vcs.ci_status",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
       "timeoutMs": 1800000,
+      "failurePrompt": "The pipeline checked CI on PR #{{entity.artifacts.prNumber}} and found one or more failing checks. The PR cannot advance to review until all required checks are green. Run this to see exactly which checks failed:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nFor each failing check, read the failure log and fix the underlying problem in your worktree at {{entity.artifacts.worktreePath}}. Run the build and tests locally to confirm the fix before pushing. Once your fixes are committed and pushed, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}",
       "outcomes": {
-        "ready": {
+        "passed": {
           "proceed": true
         },
-        "ci_failed": {
+        "failed": {
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The review-bots-ready gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal pr_created to retry."
+      "timeoutPrompt": "The pipeline waited 30 minutes for CI checks on PR #{{entity.artifacts.prNumber}} to complete, but they have not finished. Run this to see the current check status:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nIf a check is stuck, push an empty commit to cancel and re-trigger CI:\n\n```\ncd {{entity.artifacts.worktreePath}} && git commit --allow-empty -m 'ci: trigger re-run' && git push\n```\n\nOnce all checks are green, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}"
     },
     {
       "name": "merge-queue",
-      "type": "command",
-      "command": "gates/merge-queue.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "type": "primitive",
+      "primitiveOp": "vcs.merge_pr",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
       "timeoutMs": 1800000,
+      "failurePrompt": "The pipeline attempted to merge PR #{{entity.artifacts.prNumber}} and it was blocked. Check the PR status to understand why:\n\n```\ngh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus,mergeable\n```\n\nIf the status is DIRTY (the branch has fallen behind the base branch), merge the default branch into your worktree and push:\n\n```\ncd {{entity.artifacts.worktreePath}}\ngit fetch origin\nMAIN=$(git remote show origin | sed -n 's/.*HEAD branch: //p')\ngit merge --no-edit origin/$MAIN\ngit push\n```\n\nIf CI failed inside the merge queue, identify the failing check:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\n```\n\nFix the failures, commit, and push. Once the PR is back in a mergeable state, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}",
+      "timeoutPrompt": "The pipeline tried to merge PR #{{entity.artifacts.prNumber}} but it has not merged after 30 minutes. This usually means a CI check inside the merge queue is stuck. Check the current status:\n\n```\ngh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}\ngh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus\n```\n\nIf checks are stuck, push an empty commit to cancel and re-trigger:\n\n```\ncd {{entity.artifacts.worktreePath}} && git commit --allow-empty -m 'ci: trigger re-run' && git push\n```\n\nIf the PR was closed rather than merged, report it. Otherwise, once the PR merges, say this exact line:\n\nFixes pushed: {{entity.artifacts.prUrl}}",
       "outcomes": {
         "merged": {
           "proceed": true
@@ -155,9 +170,6 @@
           "toState": "fixing"
         },
         "closed": {
-          "toState": "stuck"
-        },
-        "timeout": {
           "toState": "stuck"
         }
       }
