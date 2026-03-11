@@ -133,23 +133,31 @@
     },
     {
       "name": "review-bots-ready",
-      "type": "command",
-      "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "type": "primitive",
+      "primitiveOp": "vcs.ci_status",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
       "timeoutMs": 1800000,
       "outcomes": {
-        "ready": {
+        "passed": {
           "proceed": true
         },
-        "ci_failed": {
+        "failed": {
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The review-bots-ready gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal pr_created to retry."
+      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal with the appropriate trigger (pr_created or fixes_pushed) to retry."
     },
     {
       "name": "merge-queue",
-      "type": "command",
-      "command": "gates/merge-queue.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "type": "primitive",
+      "primitiveOp": "vcs.merge_pr",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
       "timeoutMs": 1800000,
       "outcomes": {
         "merged": {
@@ -159,9 +167,6 @@
           "toState": "fixing"
         },
         "closed": {
-          "toState": "stuck"
-        },
-        "timeout": {
           "toState": "stuck"
         }
       }
