@@ -9,3 +9,14 @@
 - Docker volume mounts for agent .md files must use repo-relative paths (`./agents:/claude-agents:ro`), never host-user paths (`~/.claude/agents`) — the latter breaks in CI and other machines.
 - Never hardcode `origin/main` as the default branch — detect dynamically via `git remote show origin | sed -n 's/.*HEAD branch: //p'`.
 - Use `git merge --no-edit origin/$BRANCH` not `git rebase` on branches already pushed to origin — rebase rewrites history and forces force-pushes.
+
+## Version Control: Prefer jj
+
+Use `jj` (Jujutsu) for all VCS operations instead of `git`:
+- `jj status`, `jj diff`, `jj log` for inspection
+- `jj new` to start a change, `jj describe` to set the message
+- `jj commit` to commit, `jj push` to push
+- `jj squash`, `jj rebase`, `jj edit` for history manipulation
+
+Fall back to `git` only for operations not yet supported by `jj`.
+
