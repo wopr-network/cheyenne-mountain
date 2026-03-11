@@ -88,19 +88,43 @@
     },
     {
       "name": "review-bots-ready",
-      "type": "command",
-      "command": "gates/review-bots-ready.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
-      "timeoutMs": 600000,
-      "failurePrompt": "Review bots (Qodo, CodeFactor) have not posted on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check that the PR is not a draft and that the bots are enabled for this repo. Re-signal clean once bots have posted.",
-      "timeoutPrompt": "Timed out waiting for review bots on PR #{{entity.artifacts.prNumber}} after 10 minutes. The bots may be down or the repo may not have them configured. Proceed to manual review if bots are non-essential for this repo."
+      "type": "primitive",
+      "primitiveOp": "vcs.ci_status",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
+      "timeoutMs": 1800000,
+      "outcomes": {
+        "passed": {
+          "proceed": true
+        },
+        "failed": {
+          "toState": "fixing"
+        }
+      },
+      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal with the appropriate trigger (pr_created or fixes_pushed) to retry."
     },
     {
       "name": "merge-queue",
-      "type": "command",
-      "command": "gates/merge-queue.sh {{entity.artifacts.prNumber}} {{entity.refs.github.repo}}",
+      "type": "primitive",
+      "primitiveOp": "vcs.merge_pr",
+      "primitiveParams": {
+        "repo": "{{entity.refs.github.repo}}",
+        "prNumber": "{{entity.artifacts.prNumber}}"
+      },
       "timeoutMs": 1800000,
-      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, rebase on main and force-push. If CI failed in queue, check the failing checks and fix.",
-      "timeoutPrompt": "PR #{{entity.artifacts.prNumber}} has been in the merge queue for over 30 minutes in {{entity.refs.github.repo}}. Poll status with `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json state,mergeStateStatus` — the wopr-pr-watch.sh script may have exited on UNSTABLE without reporting."
+      "outcomes": {
+        "merged": {
+          "proceed": true
+        },
+        "blocked": {
+          "toState": "fixing"
+        },
+        "closed": {
+          "toState": "stuck"
+        }
+      }
     }
   ],
   "transitions": [
