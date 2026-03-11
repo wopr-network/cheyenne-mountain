@@ -159,6 +159,8 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
+      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed or was blocked in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, rebase on main and force-push. If CI failed, check the failing checks and fix.",
+      "timeoutPrompt": "PR #{{entity.artifacts.prNumber}} did not merge within 30 minutes in {{entity.refs.github.repo}}. Check CI status with `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}`. If checks are stuck, push an empty commit to re-trigger CI.",
       "outcomes": {
         "merged": {
           "proceed": true
