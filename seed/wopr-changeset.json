@@ -95,6 +95,7 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
+      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}} before review bots could finish. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed, fix in the worktree, push, then re-signal clean.",
       "outcomes": {
         "passed": {
           "proceed": true
@@ -103,7 +104,7 @@
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, then re-signal with the appropriate trigger (pr_created or fixes_pushed) to retry."
+      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, fix if needed, then re-signal clean."
     },
     {
       "name": "merge-queue",
@@ -114,7 +115,7 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
-      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed or was blocked in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, rebase on main and force-push. If CI failed in queue, check the failing checks and fix.",
+      "failurePrompt": "PR #{{entity.artifacts.prNumber}} failed or was blocked in the merge queue for {{entity.refs.github.repo}}. Run `gh pr view {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}} --json mergeStateStatus` to check status. If DIRTY, merge from main: `git fetch origin && git merge --no-edit origin/main && git push`. If CI failed in queue, check the failing checks and fix.",
       "timeoutPrompt": "PR #{{entity.artifacts.prNumber}} did not merge within 30 minutes in {{entity.refs.github.repo}}. Check CI status with `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}`. If checks are stuck, push an empty commit to re-trigger CI.",
       "outcomes": {
         "merged": {
