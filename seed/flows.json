@@ -140,7 +140,7 @@
         "prNumber": "{{entity.artifacts.prNumber}}"
       },
       "timeoutMs": 1800000,
-      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}} before review bots could finish. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed, fix in the worktree, push, then re-signal clean.",
+      "failurePrompt": "CI checks failed on PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}} before review bots could finish. Run `gh pr checks {{entity.artifacts.prNumber}} --repo {{entity.refs.github.repo}}` to see which checks failed, fix in the worktree, push, then re-signal pr_created (from coding) or fixes_pushed (from fixing).",
       "outcomes": {
         "passed": {
           "proceed": true
@@ -149,7 +149,7 @@
           "toState": "fixing"
         }
       },
-      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, fix if needed, then re-signal clean."
+      "timeoutPrompt": "The CI status gate hit the 30-minute hard timeout for PR #{{entity.artifacts.prNumber}} in {{entity.refs.github.repo}}. Check CI status, fix if needed, then re-signal pr_created (from coding) or fixes_pushed (from fixing)."
     },
     {
       "name": "merge-queue",
